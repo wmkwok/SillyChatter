@@ -14,6 +14,6 @@ int REGISTER(char *registration){
 }
 
 int UNREGISTER(char * username){
-  printf("shoudl be de-registering...\n");
+  printf("should be de-registering...\n");
   return 0;
 }

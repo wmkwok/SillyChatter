@@ -67,7 +67,7 @@ void CheckData(BYTE * buf, int size) {
 //after recv reads msg it is picked apart and
 //executed by MsgHandle.
 //TODO: break up command from parameters
-int MsgHandle(char * msg, int usrIndex){
+iint MsgHandle(char * msg, int usrIndex){
   if(!strcmp(msg, "CONNECT")) return 0;
   else if(!strcmp(msg, "REGISTER")){
     REGISTER(msg);
