@@ -21,15 +21,15 @@ e.g REGISTER myuser mypass
 ###New Function Descriptions
 ####client.c
 ####client_registration.c
-- int REGISTER(void): prompts for a username and password between 4-8 characters and numbers. Send a request to server. Returns 0 if registration is sucessful. 
-- int LOGIN(): promts for username and password. Send a request to server and returns 0 if login sucessful.
-- int UNREGISTER():
-- int LOGOUT():
+- **int REGISTER(void):** prompts for a username and password between 4-8 characters and numbers. Send a request to server. Returns 0 if registration is sucessful. 
+- **int LOGIN():** promts for username and password. Send a request to server and returns 0 if login sucessful.
+- **int UNREGISTER():**
+- **int LOGOUT():**
 ####server.c
-int MsgHandle(char * msg, int usrIndex): Takes in a msg and the index of the client that send the msg, pulls it apart and executes it. Doesn't really need to return anything really.
+- **int MsgHandle(char * msg, int usrIndex):** Takes in a msg and the index of the client that send the msg, pulls it apart and executes it. Doesn't really need to return anything really.
 ####server_registration.c
-- int REGISTER(char * registration): takes in the registration info and just sticks it into a file so far.
-- int UNREGISTER(char * username): Takes in a username and finds it in the file to delete it from registered users list.
+- **int REGISTER(char * registration):** takes in the registration info and just sticks it into a file so far.
+- **int UNREGISTER(char * username):** Takes in a username and finds it in the file to delete it from registered users list.
 
 
 ###New Function Structures
