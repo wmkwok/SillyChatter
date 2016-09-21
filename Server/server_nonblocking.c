@@ -69,7 +69,7 @@ void CheckData(BYTE * buf, int size) {
 //TODO: break up command from parameters
 int MsgHandle(char * msg, int usrIndex){
   char * cmd;
-  if(cmd = strsep(&string, ",") != NULL){
+  if((cmd = strsep(&msg, " ")) != NULL){
     printf("msg handle parsed: %s\n", cmd);
   }
   else{

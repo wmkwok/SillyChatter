@@ -11,4 +11,4 @@ server_nonblocking: server_nonblocking.o registration.o
 	$(CC) $(LDFLAGS) -c $<
 
 clean:
-	rm -f *~ *.o *#
+	rm -f *~ *.o *# server_nonblocking
