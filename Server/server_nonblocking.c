@@ -65,7 +65,8 @@ void CheckData(BYTE * buf, int size) {
 }
 
 int MsgHandle(char * msg){
-  //  if(!strcmp(msg, "CONNECT"))
+  if(!strcmp(msg, "CONNECT")) return 0;
+  else REGISTER(msg);
   if(!strcmp(msg, "REGISTER")){
     REGISTER(msg);
   }
