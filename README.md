@@ -25,6 +25,7 @@ e.g REGISTER myuser mypass
 - **int LOGIN():** promts for username and password. Send a request to server and returns 0 if login sucessful.
 - **int UNREGISTER():**
 - **int LOGOUT():**
+
 ####server.c
 - **int MsgHandle(char * msg, int usrIndex):** Takes in a msg and the index of the client that send the msg, pulls it apart and executes it. Doesn't really need to return anything really.
 ####server_registration.c
