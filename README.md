@@ -9,7 +9,8 @@ The user will not be allowed to send any messages until login or registration is
 Connection shouldn't be established until user logs in or sucessfully registers. After user register/login the server will either receive the REGISTER or LOGIN msg, and accept a connection. The server will fill info into peers,connStat, as well as record the user address in users. Users is an array of the user data structure.
 
 ###Communicating
-
+All communication from client to server all start with an all caps command, followed by it's parameters.
+e.g REGISTER myuser mypass
 
 ###Disconnecting
 
