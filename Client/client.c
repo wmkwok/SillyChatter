@@ -97,7 +97,7 @@ int Recv_Blocking(int sockFD, BYTE * data, int len){
     else 
       Error("Unexpected error %d: %s.", errno, strerror(errno));
   }
-  printf("gotten: %s \n", data);
+  //  printf("gotten: %s \n", data);
   return 0;
 }
 
@@ -186,8 +186,7 @@ void DoClient1(const char * svrIP, int svrPort, char * msg, int nReq, int size){
   //record stop time
   double endTime = t.time + t.millitm / (double)1000.0f;
   
-  Log("Transaction: %d bytes, %.2lf seconds.", size, endTime-startTime);
-  //CheckData(buf, size);
+  //Log("Transaction: %d bytes, %.2lf seconds.", size, endTime-startTime);
   close(sockFD);
 
   free(buf);
@@ -197,8 +196,10 @@ void DoClient1(const char * svrIP, int svrPort, char * msg, int nReq, int size){
 int main(){
   DoClient1("54.245.33.37", 7295, "CONNECT", 1, 9);
   char init[10];
-  printf("Please type /register to register,\n/logon to log on, \n/quit to quit.\n");
+  char msg[128];
 
+  //ask for register or login, no availability to public message unless login or register.
+  printf("Please type /register to register,\n/ligon to log on, \n/quit to quit.\n");
   while(1){
     printf(": ");
     scanf("%s", &init);
@@ -210,13 +211,25 @@ int main(){
 	printf("Registration failed. Please try again or just give up.\n");
       }
     }
-    else if(!strcmp(init, "/logon")){
-      if(LOGON() == 0){
+    else if(!strcmp(init, "/login")){
+      if(LOGIN() == 0){
 	break;	
       }
     }
     else if(!strcmp(init, "/quit")){
       break;
+    }
+  }
+
+  //read in other commands and type public msgs
+  printf("Type /help for list of available commands \n");
+  while(1){
+    int i;
+    printf(": ");
+    i = scanf("%s", &msg);
+    if(i > 0){
+      if(!strcmp(msg, "/help")) help();
+      else printf("you typed: %s\n", msg);
     }
   }
 

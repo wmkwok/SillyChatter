@@ -19,7 +19,7 @@ int REGISTER(){
   char user[8];
   char pass[8];
   char apass[8];
-  char msg[100];
+  char msg[30];
 
 printf("--------------------Registration--------------------\nUsername and Password must be between 4-8 letters and numbers. Password is case sensitive. \n");
   while(1){
@@ -43,7 +43,6 @@ printf("--------------------Registration--------------------\nUsername and Passw
       strcat(msg, user);
       strcat(msg, " ");
       strcat(msg, pass);
-      strcat(msg, "\r\n");
       DoClient1("54.245.33.37", 7295, msg, 1, sizeof(msg));
       return 0;
     }
@@ -58,12 +57,36 @@ int UNREGISTER(){
 
 }
 
-int LOGON(){
-  printf("logon\n");
+int LOGIN(){
+  char user[8];
+  char pass[8];
+  char msg[30];
+
+  while(1){
+    printf("Username: ");
+    scanf("%s", &user);
+    //check if user is doable
+    
+    printf("\nPassword: ");
+    scanf("%s", &pass);
+
+    strcpy(msg, "LOGIN ");
+    strcat(msg, user);
+    strcat(msg, " ");
+    strcat(msg, pass);
+    DoClient1("54.245.33.37", 7295, msg, 1, sizeof(msg));
+    return 0;
+  }
+  printf("login %s\n", msg);
   return 0;
 }
 
 int LOGOUT(){
   printf("logon\n");
   return 0;
+}
+
+
+void help(){
+  printf("no help for u\n");
 }
