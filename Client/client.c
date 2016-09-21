@@ -57,11 +57,6 @@ void CheckData(BYTE * buf, int size){
       Error("Received wrong data.");
 }
 
-void Print_Message(BYTE * buf){
-  printf("%s \n", buf);
-}
-
-
 
 /**************************send/recieve functions*************************/
 //send function, takes a socket file descriptor, data, and length
