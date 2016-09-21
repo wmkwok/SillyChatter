@@ -22,10 +22,10 @@ Connection shouldn't be established until user logs in or sucessfully registers.
 
 ###New Function Structures
 - **User** Used to store an online user and address. We might not need pass here.
-'''
+```
 struct user{
   char * name;
   char * pass;
   char * addr;
 }
-'''
+```
