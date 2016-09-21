@@ -64,10 +64,12 @@ void CheckData(BYTE * buf, int size) {
     }
 }
 
-int MsgHandle(char * msg){
+//after recv reads msg it is picked apart and
+//executed by MsgHandle.
+//TODO: break up command from parameters
+int MsgHandle(char * msg, int usrIndex){
   if(!strcmp(msg, "CONNECT")) return 0;
-  else REGISTER(msg);
-  if(!strcmp(msg, "REGISTER")){
+  else if(!strcmp(msg, "REGISTER")){
     REGISTER(msg);
   }
   printf("using msg handler\n");
@@ -95,7 +97,7 @@ int Send_NonBlocking(int sockFD, const BYTE * data, int len, struct CONN_STAT * 
   return 0;
 }
 
-int Recv_NonBlocking(int sockFD, BYTE * data, int len, struct CONN_STAT * pStat, struct pollfd * pPeer) {
+int Recv_NonBlocking(int sockFD, BYTE * data, int len, struct CONN_STAT * pStat, struct pollfd * pPeer, int usrIndex) {
   while (pStat->nRecv < len) {
     int n = recv(sockFD, data + pStat->nRecv, len - pStat->nRecv, 0);
     if (n > 0) {
@@ -106,7 +108,7 @@ int Recv_NonBlocking(int sockFD, BYTE * data, int len, struct CONN_STAT * pStat,
       return -1;
     } else if (n < 0 && (errno == EWOULDBLOCK)) {
       printf("received something: %s\n", data);
-      MsgHandle(data);
+      MsgHandle(data, usrIndex);
       return 0;
     } else {
       Error("Unexpected recv error %d: %s.", errno, strerror(errno));
@@ -206,7 +208,7 @@ void DoServer(int svrPort, int maxConcurrency) {
 	//read request
 	if (connStat[i].nRecv < 4) {
 	  
-	  if (Recv_NonBlocking(fd, msg, MAX_MSG_SIZE, &connStat[i], &peers[i]) < 0) {
+	  if (Recv_NonBlocking(fd, msg, MAX_MSG_SIZE, &connStat[i], &peers[i], i) < 0) {
 	    RemoveConnection(i);
 	    goto NEXT_CONNECTION;
 	  }
