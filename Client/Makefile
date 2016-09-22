@@ -11,4 +11,4 @@ client: client.o registration.o
 	$(CC) $(CFLAGS) -c $<
 
 clean:
-	rm -f *~ *o *#
+	rm -f *~ *o *# client

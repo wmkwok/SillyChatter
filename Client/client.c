@@ -202,6 +202,7 @@ int main(){
     if(!strcmp(init, "/register")){
       if(REGISTER() == 0){
 	printf("Congrats! Your registration was successful. \n");
+	break;
       }
       else{
 	printf("Registration failed. Please try again or just give up.\n");
@@ -225,7 +226,10 @@ int main(){
     i = scanf("%127s", msg);
     if(i > 0){
       if(!strcmp(msg, "/help")) help();
-      else printf("you typed: %s\n", msg);
+      else {
+	printf("you typed: %s\n", msg);
+	DoClient1("54.245.33.37", 7295, msg, 1, sizeof(msg));
+      }
     }
   }
 
@@ -240,6 +244,5 @@ int main(){
 
   srand(time(NULL));
 
-  //DoClient(serverIP, port, nReq, minSize, maxSize);
   return 0;
 }
