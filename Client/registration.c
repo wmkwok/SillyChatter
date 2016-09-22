@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 
-
 typedef unsigned char BYTE;
 /*
  * Ask for username, password
@@ -16,27 +15,27 @@ int minSize = 10000;
 int maxSize = 100000;
 
 int REGISTER(){
-  char user[8];
-  char pass[8];
-  char apass[8];
+  char user[10];
+  char pass[10];
+  char apass[10];
   char msg[30];
 
 printf("--------------------Registration--------------------\nUsername and Password must be between 4-8 letters and numbers. Password is case sensitive. \n");
   while(1){
     printf("Username: ");
-    scanf("%s", &user);
+    scanf("%9s", user);
     //check if user is doable
 
     printf("\nPassword: ");
-    scanf("%s", &pass);
+    scanf("%9s", pass);
     
     if(strlen(pass) > 9 || strlen(pass) < 4){
-      printf("invalid password length %d\n", strlen(pass));
+      printf("invalid password length %lu\n", strlen(pass));
       continue;
     }
     
     printf("\nRepeat Password: ");
-    scanf("%s", &apass);
+    scanf("%9s", apass);
     if(!strcmp(apass, pass)){
       //send user registration request
       strcpy(msg, "REGISTER ");
@@ -54,21 +53,22 @@ printf("--------------------Registration--------------------\nUsername and Passw
 }
 
 int UNREGISTER(){
-
+  printf("unregister\n");
+  return 0;
 }
 
 int LOGIN(){
-  char user[8];
-  char pass[8];
+  char user[10];
+  char pass[10];
   char msg[30];
 
   while(1){
     printf("Username: ");
-    scanf("%s", &user);
+    scanf("%8s", user);
     //check if user is doable
     
     printf("\nPassword: ");
-    scanf("%s", &pass);
+    scanf("%8s", pass);
 
     strcpy(msg, "LOGIN ");
     strcat(msg, user);

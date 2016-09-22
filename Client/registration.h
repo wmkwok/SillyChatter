@@ -1,6 +1,6 @@
 int REGISTER(void);
 int UNREGISTER(void);
-int LOGON(void);
+int LOGIN(void);
 int LOGOUT(void);
 
 void help(void);

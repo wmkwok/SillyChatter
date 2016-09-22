@@ -30,7 +30,7 @@ void Error(const char* format, ...){
   exit(-1);
 }
 
-//print that a connection message
+//print that a connection message, should use this for logging.
 void Log(const char * format, ...){
   char msg[2048];
   va_list argptr;
@@ -39,6 +39,7 @@ void Log(const char * format, ...){
   va_end(argptr);
   fprintf(stderr, "%s\n", msg);
 }
+
 //generate random number use to send random request size.
 int GetRandom(int min, int max){
   DWORD r = 0;
@@ -50,13 +51,13 @@ int GetRandom(int min, int max){
 }
 
 //checks the data, this is test so sends alphabet, we know it should be alphabet
+//dont think we need this anymore
 void CheckData(BYTE * buf, int size){
   int i;
   for (i=0; i<size; i++)
     if (buf[i] != 'A' + i % 26)
       Error("Received wrong data.");
 }
-
 
 /**************************send/recieve functions*************************/
 //send function, takes a socket file descriptor, data, and length
@@ -197,7 +198,7 @@ int main(){
   printf("Please type /register to register,\n/ligon to log on, \n/quit to quit.\n");
   while(1){
     printf(": ");
-    scanf("%s", &init);
+    scanf("%9s", init);
     if(!strcmp(init, "/register")){
       if(REGISTER() == 0){
 	printf("Congrats! Your registration was successful. \n");
@@ -221,7 +222,7 @@ int main(){
   while(1){
     int i;
     printf(": ");
-    i = scanf("%s", &msg);
+    i = scanf("%127s", msg);
     if(i > 0){
       if(!strcmp(msg, "/help")) help();
       else printf("you typed: %s\n", msg);
