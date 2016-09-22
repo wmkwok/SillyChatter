@@ -81,13 +81,16 @@ void CheckData(BYTE * buf, int size) {
 int MsgHandle(BYTE * msg, int usrIndex){
   char * cmd;
   char * newMsg = (char *)msg;
+  if(!strcmp(newMsg, "CONNECT")) return 0;
   if((cmd = strsep(&newMsg, " ")) != NULL){
+    if(!strcmp(cmd, "REGISTER")){
+      return (REGISTER(newMsg, usrIndex));
+    }
+    return 0;
   }
   else{
-  if(!strcmp(newMsg, "CONNECT")) return 0;
-  }
-  if(!strcmp(cmd, "REGISTER")){
-    return (REGISTER(cmd));
+    printf("no cmd\n");
+    return 0;
   }
   return 0;
 }
