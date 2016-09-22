@@ -13,6 +13,7 @@
 #include <poll.h>
 #include "registration.h"
 
+//just redefining sizes in better names...
 typedef unsigned char BYTE;
 typedef unsigned int DWORD;
 typedef unsigned short WORD;
@@ -21,23 +22,29 @@ typedef unsigned short WORD;
 #define MAX_CONCURRENCY_LIMIT 64
 #define MAX_MSG_SIZE 512
 
+//structure for a connection to record their status
 struct CONN_STAT {
   int size;//0 if unknown yet
   int nRecv;
   int nSent;
 };
 
+//structure for recording online user, we probs dont need pass?
 struct user{
   char * name;
   char * pass;
   char * addr;
 };
 
+//other variables we need, number of connections, and arrays of the above structures
+//and an array of file descriptors to record FDs and poll
 int nConns;
 struct pollfd peers[MAX_CONCURRENCY_LIMIT+1];
 struct CONN_STAT connStat[MAX_CONCURRENCY_LIMIT+1];
 struct user users[MAX_CONCURRENCY_LIMIT + 1];
+
 /***********************************************utility functions**************************************/
+//To report an error, also reduces main code by alot
 void Error(const char * format, ...) {
   char msg[4096];
   va_list argptr;
@@ -48,6 +55,8 @@ void Error(const char * format, ...) {
   exit(-1);
 }
 
+//Similar to error, but i supppose we can change this to do the logging
+//requirement of the project
 void Log(const char * format, ...) {
   char msg[2048];
   va_list argptr;
@@ -57,6 +66,8 @@ void Log(const char * format, ...) {
   fprintf(stderr, "%s\n", msg);
 }
 
+//To check the basic sample data, is becoming more and more useless
+//porbably going to be deleted as soon as we know for sure.
 void CheckData(BYTE * buf, int size) {
   int i;
   for (i=0; i<size; i++) if (buf[i] != 'A' + i % 26) {
@@ -67,21 +78,25 @@ void CheckData(BYTE * buf, int size) {
 //after recv reads msg it is picked apart and
 //executed by MsgHandle.
 //TODO: break up command from parameters
-int MsgHandle(char * msg, int usrIndex){
+int MsgHandle(BYTE * msg, int usrIndex){
   char * cmd;
-  if((cmd = strsep(&msg, " ")) != NULL){
+  char * newMsg = (char *)msg;
+  if((cmd = strsep(&newMsg, " ")) != NULL){
     printf("msg handle parsed: %s\n", cmd);
   }
   else{
-  if(!strcmp(msg, "CONNECT")) return 0;
+  if(!strcmp(newMsg, "CONNECT")) return 0;
   }
   if(!strcmp(cmd, "REGISTER")){
     REGISTER(cmd);
   }
   printf("using msg handler\n");
+  return 0;
 }
 
 /****************************************Communication functions*************************************/
+
+//Sends something to target file descriptor(socket), nonblocking.
 int Send_NonBlocking(int sockFD, const BYTE * data, int len, struct CONN_STAT * pStat, struct pollfd * pPeer) {
   
   while (pStat->nSent < len) {
@@ -103,6 +118,8 @@ int Send_NonBlocking(int sockFD, const BYTE * data, int len, struct CONN_STAT * 
   return 0;
 }
 
+//recieves something from file descriptor(socket), nonblocking.
+//Takes extra usrIndex integer as used in peers and connStat, needed for knowing who sent it to server
 int Recv_NonBlocking(int sockFD, BYTE * data, int len, struct CONN_STAT * pStat, struct pollfd * pPeer, int usrIndex) {
   while (pStat->nRecv < len) {
     int n = recv(sockFD, data + pStat->nRecv, len - pStat->nRecv, 0);
@@ -123,6 +140,7 @@ int Recv_NonBlocking(int sockFD, BYTE * data, int len, struct CONN_STAT * pStat,
   return 0;
 }
 
+//set a fd to non-blocking
 void SetNonBlockIO(int fd) {
   int val = fcntl(fd, F_GETFL, 0);
   if (fcntl(fd, F_SETFL, val | O_NONBLOCK) != 0) {
@@ -130,6 +148,7 @@ void SetNonBlockIO(int fd) {
   }
 }
 
+//Removes a connection from peers, connStat, as well as users array. Decreases number of connections.
 void RemoveConnection(int i) {
   close(peers[i].fd);
   if (i < nConns) {
@@ -140,25 +159,30 @@ void RemoveConnection(int i) {
   nConns--;
 }
 
+
 void DoServer(int svrPort, int maxConcurrency) {
-  BYTE * buf = (BYTE *)malloc(MAX_REQUEST_SIZE);
+  //create some needed variables: i for loop, listening socket
+  //a BYTE array to store incoming msg
+  int i;
+  BYTE msg[MAX_MSG_SIZE];
   
   int listenFD = socket(AF_INET, SOCK_STREAM, 0);
+  //make sure listener was made
   if (listenFD < 0) {
     Error("Cannot create listening socket.");
   }
+  //set to nonblocking
   SetNonBlockIO(listenFD);
   
+  //initialize internet structure
   struct sockaddr_in serverAddr;
   memset(&serverAddr, 0, sizeof(struct sockaddr_in));
   serverAddr.sin_family = AF_INET;
   serverAddr.sin_port = htons((unsigned short) svrPort);
   serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-  //prepare data
-  int i;
-  BYTE msg[MAX_MSG_SIZE];
-
+  //prepare data change options, bind and start listening.
+  //check for any problems each step of the way
   int optval = 1;
   int r = setsockopt(listenFD, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
   if (r != 0) {
@@ -173,6 +197,7 @@ void DoServer(int svrPort, int maxConcurrency) {
     Error("Cannot listen to port %d.", svrPort);
   }
   
+  //setup for peers for the listener
   nConns = 0;
   memset(peers, 0, sizeof(peers));
   peers[0].fd = listenFD;
@@ -181,16 +206,18 @@ void DoServer(int svrPort, int maxConcurrency) {
   
   int connID = 0;
   while (1) {//the main loop
-    
+    //number of needy connections
     int nReady = poll(peers, nConns + 1, -1);
-    
+    //if it's negative there's some big problem
     if (nReady < 0) {
       Error("Invalid poll() return value.");
     }
     
+    //create an internet structure for clients
     struct sockaddr_in clientAddr;
     socklen_t clientAddrLen = sizeof(clientAddr);
     
+    //if something is trying to connect and we have space, accept and add into peer, users, connStat
     if ((peers[0].revents & POLLRDNORM) && (nConns < maxConcurrency)) {
       int fd = accept(listenFD, (struct sockaddr *)&clientAddr, &clientAddrLen);
       if (fd != -1) {
@@ -200,15 +227,17 @@ void DoServer(int svrPort, int maxConcurrency) {
 	peers[nConns].events = POLLRDNORM;
 	peers[nConns].revents = 0;
 	
-	//users[i].addr = inet_ntoa(clientAddr.sin_addr);
-	//printf("user address set: %s\n", users[i].addr);
+	//user connected add as a user connection
+	users[i].addr = inet_ntoa(clientAddr.sin_addr);
+	printf("user address set: %s\n", users[i].addr);
 	memset(&connStat[nConns], 0, sizeof(struct CONN_STAT));
       }
-      
+      //if nothing go on
       if (--nReady <= 0) continue;
     }
     
-    for (i=1; i<=nConns; i++) {
+    //go through each connection and recv if it needs it
+    for (i=1; i<=nConns; i++) { //main read/write loop
       if (peers[i].revents & (POLLRDNORM | POLLERR | POLLHUP)) {
 	int fd = peers[i].fd;
 	//read request
@@ -218,7 +247,8 @@ void DoServer(int svrPort, int maxConcurrency) {
 	    RemoveConnection(i);
 	    goto NEXT_CONNECTION;
 	  }
-	  
+
+	  //urrrrmmmm, i dont think we need this any longer.....
 	  if (connStat[i].nRecv == 4) {
 	    int size = connStat[i].size;
 	    if (size <= 0 || size > MAX_REQUEST_SIZE) {
@@ -228,16 +258,17 @@ void DoServer(int svrPort, int maxConcurrency) {
 	  }
 	}
 	
-	//send response
+	//send response, IF we received something that is...
 	if (connStat[i].nRecv != 0) {
 	  int size = connStat[i].nRecv;
-	  if (Send_NonBlocking(fd, "received", size, &connStat[i], &peers[i]) < 0 || connStat[i].nSent == size) {
+	  if (Send_NonBlocking(fd, (BYTE *)"received", size, &connStat[i], &peers[i]) < 0 || connStat[i].nSent == size) {
 	    RemoveConnection(i);
 	    goto NEXT_CONNECTION;
 	  }
 	}
       }
       
+      //if this needs to resume sending, then do so
       if (peers[i].revents & POLLWRNORM) {
 	int size = connStat[i].nRecv;
 	if (Send_NonBlocking(peers[i].fd, msg, size, &connStat[i], &peers[i]) < 0 || connStat[i].nSent == size) {
@@ -246,6 +277,7 @@ void DoServer(int svrPort, int maxConcurrency) {
 	}
       }
       
+      //NEXT_CONNECTION is so we don't go through all the code if no requests
     NEXT_CONNECTION:
       if (--nReady <= 0) break;
     }
@@ -253,14 +285,16 @@ void DoServer(int svrPort, int maxConcurrency) {
 }
 
 int main(int argc, char * * argv) {
-  
+  //make sure enough arguments
   if (argc != 3) {
     Log("Usage: %s [server Port] [max concurrency]", argv[0]);
     return -1;
   }
   
+  //set arguments
   int port = atoi(argv[1]);
   int maxConcurrency = atoi(argv[2]);
+  //call DoServer
   DoServer(port, maxConcurrency);
   
   return 0;
