@@ -228,8 +228,10 @@ void DoServer(int svrPort, int maxConcurrency) {
 	peers[nConns].revents = 0;
 	
 	//user connected add as a user connection
-	users[i].addr = inet_ntoa(clientAddr.sin_addr);
-	printf("user address set: %s\n", users[i].addr);
+	users[nConns] = *(struct user*)malloc(sizeof(struct user));
+	printf("address %i", (users[nConns].addr));
+	//inet_ntop(AF_INET, &(clientAddr.sin_addr), users[i].addr,sizeof(users[i].addr));
+	//printf("user address set: %s\n", users[i].addr);
 	memset(&connStat[nConns], 0, sizeof(struct CONN_STAT));
       }
       //if nothing go on
