@@ -3,7 +3,8 @@
 
 //takes username and pass and records into file
 // so far the the mode is readable writable overwrite w+. Change to a+ for no overwrite.
-int REGISTER(char *registration, int usr){
+int REGISTER(char *registration){
+  char * name;
   FILE *fp;
   fp = fopen("user.txt", "a+");
   fputs(registration, fp);

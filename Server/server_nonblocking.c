@@ -79,12 +79,15 @@ void CheckData(BYTE * buf, int size) {
 //executed by MsgHandle.
 //TODO: break up command from parameters
 int MsgHandle(BYTE * msg, int usrIndex){
-  char * cmd;
+  char * token;
   char * newMsg = (char *)msg;
   if(!strcmp(newMsg, "CONNECT")) return 0;
-  if((cmd = strsep(&newMsg, " ")) != NULL){
-    if(!strcmp(cmd, "REGISTER")){
-      return (REGISTER(newMsg, usrIndex));
+  if((token = strsep(&newMsg, " ")) != NULL){
+    if(!strcmp(token, "REGISTER")){
+      users[usrIndex].name = (char *)malloc(sizeof(char)); 
+      users[usrIndex].name = strsep(&newMsg, " ");
+      printf("also added user: %s\n", users[usrIndex].name);
+      return(REGISTER(newMsg));
     }
     return 0;
   }
