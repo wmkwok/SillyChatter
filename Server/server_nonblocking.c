@@ -84,10 +84,20 @@ int MsgHandle(BYTE * msg, int usrIndex){
   if(!strcmp(newMsg, "CONNECT")) return 0;
   if((token = strsep(&newMsg, " ")) != NULL){
     if(!strcmp(token, "REGISTER")){
+      if(REGISTER(newMsg)){
       users[usrIndex].name = (char *)malloc(sizeof(char)); 
       users[usrIndex].name = strsep(&newMsg, " ");
       printf("also added user: %s\n", users[usrIndex].name);
-      return(REGISTER(newMsg));
+      return 0;
+      }
+    }
+
+    else if(!strcmp(token, "LOGIN")){
+      if(LOGIN(newMsg)){
+	users[usrIndex].name = (char *)malloc(sizeof(char)); 
+	users[usrIndex].name = strsep(&newMsg, " ");
+	printf("also added user: %s\n", users[usrIndex].name);
+      }
     }
     return 0;
   }
