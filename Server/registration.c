@@ -2,10 +2,10 @@
 #include <stdlib.h>
 
 //takes username and pass and records into file
-// so far the the mode is readable writable overwrite. Change to r+ for no overwrite.
+// so far the the mode is readable writable overwrite w+. Change to a+ for no overwrite.
 int REGISTER(char *registration){
   FILE *fp;
-  fp = fopen("user.txt", "w+");
+  fp = fopen("user.txt", "a+");
   fputs(registration+9, fp);
   fputs("\n", fp);
   fclose(fp);

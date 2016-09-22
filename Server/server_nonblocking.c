@@ -41,7 +41,7 @@ struct user{
 int nConns;
 struct pollfd peers[MAX_CONCURRENCY_LIMIT+1];
 struct CONN_STAT connStat[MAX_CONCURRENCY_LIMIT+1];
-struct user users[MAX_CONCURRENCY_LIMIT + 1];
+struct user users[MAX_CONCURRENCY_LIMIT+1];
 
 /***********************************************utility functions**************************************/
 //To report an error, also reduces main code by alot
@@ -82,15 +82,13 @@ int MsgHandle(BYTE * msg, int usrIndex){
   char * cmd;
   char * newMsg = (char *)msg;
   if((cmd = strsep(&newMsg, " ")) != NULL){
-    printf("msg handle parsed: %s\n", cmd);
   }
   else{
   if(!strcmp(newMsg, "CONNECT")) return 0;
   }
   if(!strcmp(cmd, "REGISTER")){
-    REGISTER(cmd);
+    return (REGISTER(cmd));
   }
-  printf("using msg handler\n");
   return 0;
 }
 
@@ -131,12 +129,12 @@ int Recv_NonBlocking(int sockFD, BYTE * data, int len, struct CONN_STAT * pStat,
       return -1;
     } else if (n < 0 && (errno == EWOULDBLOCK)) {
       printf("received something: %s\n", data);
-      MsgHandle(data, usrIndex);
-      return 0;
+      return(MsgHandle(data, usrIndex));
     } else {
       Error("Unexpected recv error %d: %s.", errno, strerror(errno));
     }
   }
+      printf("received something: %s\n", data);
   return 0;
 }
 
@@ -228,10 +226,11 @@ void DoServer(int svrPort, int maxConcurrency) {
 	peers[nConns].revents = 0;
 	
 	//user connected add as a user connection
-	users[nConns] = *(struct user*)malloc(sizeof(struct user));
-	printf("address %i", (users[nConns].addr));
-	//inet_ntop(AF_INET, &(clientAddr.sin_addr), users[i].addr,sizeof(users[i].addr));
-	//printf("user address set: %s\n", users[i].addr);
+	users[nConns].addr = (char *)malloc(sizeof(char));
+	if(inet_ntop(AF_INET, &(clientAddr.sin_addr), users[nConns].addr, clientAddrLen) == NULL){
+	  Log("address is returned as NULL\n");
+	}
+	printf("Address connection %d: %s \n", nConns, users[nConns].addr);
 	memset(&connStat[nConns], 0, sizeof(struct CONN_STAT));
       }
       //if nothing go on
@@ -243,8 +242,7 @@ void DoServer(int svrPort, int maxConcurrency) {
       if (peers[i].revents & (POLLRDNORM | POLLERR | POLLHUP)) {
 	int fd = peers[i].fd;
 	//read request
-	if (connStat[i].nRecv < 4) {
-	  
+	if (connStat[i].nRecv < 4) {  
 	  if (Recv_NonBlocking(fd, msg, MAX_MSG_SIZE, &connStat[i], &peers[i], i) < 0) {
 	    RemoveConnection(i);
 	    goto NEXT_CONNECTION;
