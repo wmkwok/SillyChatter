@@ -12,6 +12,7 @@
 #include <stdarg.h>
 #include <time.h>
 #include "registration.h"
+#include "send.h"
 
 //re-define things as a certain type
 typedef unsigned char BYTE;
@@ -226,9 +227,10 @@ int main(){
     i = scanf("%127s", msg);
     if(i > 0){
       if(!strcmp(msg, "/help")) help();
+      else if(!strcmp(msg, "/quit")){printf("quit\n"); break;}
       else {
 	printf("you typed: %s\n", msg);
-	DoClient1("54.245.33.37", 7295, msg, 1, sizeof(msg));
+	SEND(msg);
       }
     }
   }
