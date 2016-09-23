@@ -253,7 +253,7 @@ void DoServer(int svrPort, int maxConcurrency) {
 	    RemoveConnection(i);
 	    goto NEXT_CONNECTION;
 	  }
-
+	}
 	//send response, IF we received something that is...
 	if (connStat[i].nRecv != 0) {
 	  int size = connStat[i].nRecv;
