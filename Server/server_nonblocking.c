@@ -66,15 +66,6 @@ void Log(const char * format, ...) {
   fprintf(stderr, "%s\n", msg);
 }
 
-//To check the basic sample data, is becoming more and more useless
-//porbably going to be deleted as soon as we know for sure.
-void CheckData(BYTE * buf, int size) {
-  int i;
-  for (i=0; i<size; i++) if (buf[i] != 'A' + i % 26) {
-      Error("Received wrong data.");
-    }
-}
-
 //after recv reads msg it is picked apart and
 //executed by MsgHandle.
 //TODO: break up command from parameters
@@ -88,7 +79,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
       users[usrIndex].name = (char *)malloc(sizeof(char)); 
       users[usrIndex].name = strsep(&newMsg, " ");
       printf("also added user: %s\n", users[usrIndex].name);
-      return 0;
+      return 1;
       }
     }
 
@@ -105,7 +96,6 @@ int MsgHandle(BYTE * msg, int usrIndex){
     printf("no cmd\n");
     return 0;
   }
-  return 0;
 }
 
 /****************************************Communication functions*************************************/
@@ -264,16 +254,6 @@ void DoServer(int svrPort, int maxConcurrency) {
 	    goto NEXT_CONNECTION;
 	  }
 
-	  //urrrrmmmm, i dont think we need this any longer.....
-	  if (connStat[i].nRecv == 4) {
-	    int size = connStat[i].size;
-	    if (size <= 0 || size > MAX_REQUEST_SIZE) {
-	      Error("Invalid size: %d.", size);
-	    } 
-	    Log("Transaction %d: %d bytes", ++connID, size);
-	  }
-	}
-	
 	//send response, IF we received something that is...
 	if (connStat[i].nRecv != 0) {
 	  int size = connStat[i].nRecv;
