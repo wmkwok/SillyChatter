@@ -28,6 +28,7 @@ e.g REGISTER myuser mypass
 
 ####server.c
 - **int MsgHandle(char * msg, int usrIndex):** Takes in a msg and the index of the client that send the msg, pulls it apart and executes it. Doesn't really need to return anything really.
+
 ####server_registration.c
 - **int REGISTER(char * registration):** takes in the registration info and just sticks it into a file so far.
 - **int UNREGISTER(char * username):** Takes in a username and finds it in the file to delete it from registered users list.
