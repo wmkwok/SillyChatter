@@ -174,6 +174,7 @@ void DoClient1(const char * svrIP, int svrPort, char * msg, int nReq, int size){
     Error("Cannot connect to server %s:%d.", svrIP, svrPort);
   
   //send a request
+  printf("sending msg %s\n", msg);
   Send_Blocking(sockFD, (BYTE *)msg, size);
 
   //read response
@@ -191,7 +192,7 @@ void DoClient1(const char * svrIP, int svrPort, char * msg, int nReq, int size){
 
 
 int main(){
-  DoClient1("54.245.33.37", 7295, "CONNECT", 1, 9);
+  //DoClient1("54.245.33.37", 7295, "CONNECT", 1, 9);
   char init[10];
   char msg[128];
 
