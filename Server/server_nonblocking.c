@@ -68,28 +68,29 @@ void Log(const char * format, ...) {
 
 //after recv reads msg it is picked apart and
 //executed by MsgHandle.
-//TODO: break up command from parameters
 int MsgHandle(BYTE * msg, int usrIndex){
+  printf("Received msg %s\n",msg);
   char * token;
   char * newMsg = (char *)msg;
   if(!strcmp(newMsg, "CONNECT")) return 0;
   if((token = strsep(&newMsg, " ")) != NULL){
     if(!strcmp(token, "REGISTER")){
       if(REGISTER(newMsg)){
-      users[usrIndex].name = (char *)malloc(sizeof(char)); 
-      users[usrIndex].name = strsep(&newMsg, " ");
-      printf("also added user: %s\n", users[usrIndex].name);
-      return 1;
+	users[usrIndex].name = (char *)malloc(strstr(newMsg, " ") - newMsg); 
+	strcpy(users[usrIndex].name, strsep(&newMsg, " "));
+	//printf("also added user: %s\n", users[usrIndex].name);
+	return 1;
       }
     }
-
+    
     else if(!strcmp(token, "LOGIN")){
       if(LOGIN(newMsg)){
-	users[usrIndex].name = (char *)malloc(sizeof(char)); 
-	users[usrIndex].name = strsep(&newMsg, " ");
-	printf("also added user: %s\n", users[usrIndex].name);
+	users[usrIndex].name = (char *)malloc(strstr(newMsg, " ") - newMsg + 1); 
+	strcpy(users[usrIndex].name, strsep(&newMsg, " "));
+	//printf("also added user: %s\n", users[usrIndex].name);
       }
     }
+    
     return 0;
   }
   else{
@@ -133,14 +134,14 @@ int Recv_NonBlocking(int sockFD, BYTE * data, int len, struct CONN_STAT * pStat,
       Log("Connection closed.");
       close(sockFD);
       return -1;
-    } else if (n < 0 && (errno == EWOULDBLOCK)) {
-      printf("received something: %s\n", data);
-      return(MsgHandle(data, usrIndex));
+    } else if (n < 0 && (errno == EWOULDBLOCK)) { //assuming all done
+      //printf("received something: %s\n", data);
+      return (MsgHandle(data, usrIndex));
     } else {
       Error("Unexpected recv error %d: %s.", errno, strerror(errno));
     }
   }
-      printf("received something: %s\n", data);
+  //  printf("received something: %s\n", data);
   return 0;
 }
 
@@ -236,7 +237,7 @@ void DoServer(int svrPort, int maxConcurrency) {
 	if(inet_ntop(AF_INET, &(clientAddr.sin_addr), users[nConns].addr, clientAddrLen) == NULL){
 	  Log("address is returned as NULL\n");
 	}
-	printf("Address connection %d: %s \n", nConns, users[nConns].addr);
+	printf("Address connection %d: %s %s\n", nConns, users[nConns].addr, users[nConns].name);
 	memset(&connStat[nConns], 0, sizeof(struct CONN_STAT));
       }
       //if nothing go on
