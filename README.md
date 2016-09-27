@@ -38,7 +38,6 @@ e.g REGISTER myuser mypass
 ```
 struct user{
   char * name;
-  char * pass;
   char * addr;
 }
 ```
