@@ -6,7 +6,8 @@ int SEND(char * msg){
   char cmd[150];
   strcpy(cmd, "SEND ");
   strcat(cmd, msg);
-  DoClient1("54.245.33.37", 7295, msg, 1, sizeof(msg));
+  printf("sending message --%s-- with sizeof %d \n", cmd, sizeof(cmd));
+  DoClient1("54.245.33.37", 7295, cmd, 1, sizeof(cmd));
   return 0;
 }
 
