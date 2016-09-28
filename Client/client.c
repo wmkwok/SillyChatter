@@ -225,7 +225,7 @@ int main(){
   while(1){
     int i;
     printf(": ");
-    i = scanf("%127s", msg);
+    i = scanf(" %500[^\n]s", msg);
     if(i > 0){
       if(!strcmp(msg, "/help")) help();
       else if(!strcmp(msg, "/quit")){printf("quit\n"); break;}
