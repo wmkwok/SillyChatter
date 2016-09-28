@@ -72,17 +72,19 @@ int MsgHandle(BYTE * msg, int usrIndex){
   printf("Received msg %s\n",msg);
   char * token;
   char * newMsg = (char *)msg;
+
+  //receive a connection request
   if(!strcmp(newMsg, "CONNECT")) return 0;
   if((token = strsep(&newMsg, " ")) != NULL){
     if(!strcmp(token, "REGISTER")){
       if(REGISTER(newMsg)){
 	users[usrIndex].name = (char *)malloc(strstr(newMsg, " ") - newMsg); 
 	strcpy(users[usrIndex].name, strsep(&newMsg, " "));
-	//printf("also added user: %s\n", users[usrIndex].name);
 	return 1;
       }
     }
     
+    //receive login request
     else if(!strcmp(token, "LOGIN")){
       if(LOGIN(newMsg)){
 	users[usrIndex].name = (char *)malloc(strstr(newMsg, " ") - newMsg + 1); 
@@ -91,11 +93,17 @@ int MsgHandle(BYTE * msg, int usrIndex){
       }
     }
     
-    return 0;
-  }
-  else{
-    printf("no cmd\n");
-    return 0;
+    //receive send public message request
+    else if(!strcmp(token, "SEND")){
+      printf("%s said: %s\n", users[usrIndex].name, newMsg);
+      return 0;
+    }
+    
+    //some sort of problem with msg
+    else{
+      printf("no cmd\n");
+      return 0;
+    }
   }
 }
 

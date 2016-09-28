@@ -14,4 +14,4 @@ registration.o: registration.c
 	$(CC) $(CFLAGS) -c $<
 
 clean:
-	rm -f *.txt *~ *.o *# server_nonblocking
+	rm -f *~ *.o *# server_nonblocking
