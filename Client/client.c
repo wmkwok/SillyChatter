@@ -99,56 +99,7 @@ int Recv_Blocking(int sockFD, BYTE * data, int len){
 }
 
 //Here we initialize sockets and send requests
-void DoClient(const char * svrIP, int svrPort, int nReq, int minSize, int maxSize){
-  //create buffer for data
-  BYTE * buf = (BYTE *)malloc(maxSize);
-
-  //initialize socket
-  struct sockaddr_in serverAddr;
-  memset(&serverAddr, 0, sizeof(serverAddr));
-  serverAddr.sin_family = AF_INET;
-  serverAddr.sin_port = htons((unsigned short) svrPort);
-  inet_pton(AF_INET, svrIP, &serverAddr.sin_addr);
-
-  int i;
-  //make n requests
-  for(i=0; i<nReq; i++){
-    //create the socket
-    int sockFD = socket(AF_INET, SOCK_STREAM, 0);
-    if(sockFD == -1) Error("Cannot create socket.");
-
-    //generate a random request size, based on min/max given
-    int size = GetRandom(minSize, maxSize);
-    
-    //create a timer to time our requests
-    struct timeb t;
-    ftime(&t);
-    //record when we start
-    double startTime = t.time + t.millitm / (double)1000.0f;
-    
-    //connect to a server, or return a connect error
-    if(connect(sockFD, (const struct sockaddr*)&serverAddr, sizeof(serverAddr)) != 0)
-    Error("Cannot connect to server %s:%d.", svrIP, svrPort);
-    
-    //send a 4-Byte request
-    if(Send_Blocking(sockFD, (const BYTE *)&size, 4) < 0) break;
-    
-    //read response
-    if(Recv_Blocking(sockFD, buf, size) < 0) break;
-    
-    ftime(&t);
-    //record stop time
-    double endTime = t.time + t.millitm / (double)1000.0f;
-
-    Log("Transaction %d: %d bytes, %.2lf seconds.", i, size, endTime-startTime);
-    CheckData(buf, size);
-    close(sockFD);
-  }
-  free(buf);
-}
-
-//Here we initialize sockets and send requests
-void DoClient1(const char * svrIP, int svrPort, char * msg, int nReq, int size){
+void DoClient(const char * svrIP, int svrPort, char * msg, int nReq, int size){
   //create buffer for data
   BYTE * buf = (BYTE *)malloc(size);
 
@@ -174,7 +125,7 @@ void DoClient1(const char * svrIP, int svrPort, char * msg, int nReq, int size){
     Error("Cannot connect to server %s:%d.", svrIP, svrPort);
   
   //send a request
-  printf("sending msg %s\n", msg);
+  //printf("sending msg %s\n", msg);
   Send_Blocking(sockFD, (BYTE *)msg, size);
 
   //read response
