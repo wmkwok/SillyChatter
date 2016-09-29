@@ -42,7 +42,7 @@ printf("--------------------Registration--------------------\nUsername and Passw
       strcat(msg, user);
       strcat(msg, " ");
       strcat(msg, pass);
-      DoClient("54.245.33.37", 7295, msg, 1, sizeof(msg));
+      DoClient("54.245.33.37", 7295, msg, sizeof(msg));
       return 0;
     }
     else{
@@ -74,7 +74,7 @@ int LOGIN(){
     strcat(msg, user);
     strcat(msg, " ");
     strcat(msg, pass);
-    DoClient("54.245.33.37", 7295, msg, 1, sizeof(msg));
+    DoClient("54.245.33.37", 7295, msg, sizeof(msg));
     return 0;
   }
   printf("login %s\n", msg);

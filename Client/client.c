@@ -98,8 +98,10 @@ int Recv_Blocking(int sockFD, BYTE * data, int len){
   return 0;
 }
 
+//void DoReceive(const char * srvIP, int srvPort, char * msg)
+
 //Here we initialize sockets and send requests
-void DoClient(const char * svrIP, int svrPort, char * msg, int nReq, int size){
+void DoClient(const char * svrIP, int svrPort, char * msg, int size){
   //create buffer for data
   BYTE * buf = (BYTE *)malloc(size);
 
@@ -143,7 +145,7 @@ void DoClient(const char * svrIP, int svrPort, char * msg, int nReq, int size){
 
 
 int main(){
-  //DoClient1("54.245.33.37", 7295, "CONNECT", 1, 9);
+  //DoClient("54.245.33.37", 7295, "CONNECT", 1, 9);
   char init[10];
   char msg[128];
 
