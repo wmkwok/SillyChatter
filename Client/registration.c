@@ -19,6 +19,7 @@ int REGISTER(){
   char pass[10];
   char apass[10];
   char msg[30];
+  char check[20];
 
 printf("--------------------Registration--------------------\nUsername and Password must be between 4-8 letters and numbers. Password is case sensitive. \n");
   while(1){
@@ -37,12 +38,22 @@ printf("--------------------Registration--------------------\nUsername and Passw
     printf("\nRepeat Password: ");
     scanf("%9s", apass);
     if(!strcmp(apass, pass)){
+      //send check user
+      strcpy(check, "USER ");
+      strcat(check, user);
+      
+      if(DoClient("54.245.33.37", 7295, msg, sizeof(msg))){
+
       //send user registration request
       strcpy(msg, "REGISTER ");
       strcat(msg, user);
       strcat(msg, " ");
       strcat(msg, pass);
       DoClient("54.245.33.37", 7295, msg, sizeof(msg));
+      }
+      else{
+	printf("username taken\n");
+      }
       return 0;
     }
     else{

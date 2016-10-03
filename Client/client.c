@@ -12,12 +12,13 @@
 #include <stdarg.h>
 #include <time.h>
 #include "registration.h"
-#include "send.h"
 
 //re-define things as a certain type
 typedef unsigned char BYTE;
 typedef unsigned int DWORD;
 typedef unsigned short WORD;
+
+int inSend = 0; //for stopping DoReceive and send msg
 
 /**********************utility functions********************/
 //print error statements
@@ -94,11 +95,54 @@ int Recv_Blocking(int sockFD, BYTE * data, int len){
     else 
       Error("Unexpected error %d: %s.", errno, strerror(errno));
   }
-  //  printf("gotten: %s \n", data);
+  printf("received: %s\n", data);
   return 0;
 }
 
-//void DoReceive(const char * srvIP, int srvPort, char * msg)
+void DoReceive(const char * svrIP, int svrPort, char * msg, int size){
+  //initialize socket
+  struct sockaddr_in serverAddr;
+  memset(&serverAddr, 0, sizeof(serverAddr));
+  serverAddr.sin_family = AF_INET;
+  serverAddr.sin_port = htons((unsigned short)svrPort);
+  inet_pton(AF_INET, svrIP, &serverAddr.sin_addr);
+  
+  //create socket
+  int sockFD = socket(AF_INET, SOCK_STREAM, 0);
+  if(sockFD == -1) Error("Cannot create socket.");
+  
+  //create a timer to time our requests
+  struct timeb t;
+  
+  //connect to a server, or return a connect error
+  if(connect(sockFD, (const struct sockaddr*)&serverAddr, sizeof(serverAddr)) != 0)
+    Error("Cannot connect to server %s:%d.", svrIP, svrPort);
+  else{
+    while(1){
+      if(!inSend){
+	//allocate buffer
+	BYTE * buf = (BYTE *)malloc(size);
+
+	//record when we start
+	//ftime(&t);
+	//double startTime = t.time + t.millitm / (double)1000.0f;
+
+	//read response
+	Recv_Blocking(sockFD, buf, size);
+  
+	//record stop time
+	//ftime(&t);
+	//double endTime = t.time + t.millitm / (double)1000.0f;
+  
+	//Log("Transaction: %d bytes, %.2lf seconds.", size, endTime-startTime);
+
+	//free mem space
+	free(buf);
+      }
+    }
+  }
+  close(sockFD);
+}
 
 //Here we initialize sockets and send requests
 void DoClient(const char * svrIP, int svrPort, char * msg, int size){
@@ -143,11 +187,36 @@ void DoClient(const char * svrIP, int svrPort, char * msg, int size){
   free(buf);
 }
 
+/******************************************************Message creation********************************/
+int SEND(char * msg){
+  char cmd[150];
+  strcpy(cmd, "SEND ");
+  strcat(cmd, msg);
+  DoClient("54.245.33.37", 7295, cmd, sizeof(cmd));
+  return 0;
+}
+
+int SENDPRIV(char * msg){
+  return 0;
+}
+
+/**********************************main function**************************************/
+
 
 int main(){
   //DoClient("54.245.33.37", 7295, "CONNECT", 1, 9);
+  const char * serverIP = "54.245.33.37";
+  int port = 7295;
+  int nReq = 50;
+  int minSize = 10000;
+  int maxSize = 100000;
+
+  srand(time(NULL));
+
   char init[10];
   char msg[128];
+
+  
 
   //ask for register or login, no availability to public message unless login or register.
   printf("Please type /register to register,\n/ligon to log on, \n/quit to quit.\n");
@@ -190,15 +259,6 @@ int main(){
   }
 
   //    Log("Usage: %s [server IP] [server Port] [# requests] [min_request_size] [max_request_size]", argv[0]);
-
-
-  const char * serverIP = "54.245.33.37";
-  int port = 7295;
-  int nReq = 50;
-  int minSize = 10000;
-  int maxSize = 100000;
-
-  srand(time(NULL));
 
   return 0;
 }
