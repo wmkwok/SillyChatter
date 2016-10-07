@@ -47,7 +47,7 @@ printf("--------------------Registration--------------------\nUsername and Passw
       if(1){
 	//send user registration request
 	//strcpy(msg, "SEND ");
-	strcat(msg, "REGISTER ");
+	strcpy(msg, "REGISTER ");
 	strcat(msg, user);
 	strcat(msg, " ");
 	strcat(msg, pass);
@@ -63,7 +63,7 @@ printf("--------------------Registration--------------------\nUsername and Passw
       printf("mismatching password\n");
     }
   }
-
+  return 0;
 }
 
 int UNREGISTER(){
@@ -84,8 +84,8 @@ int LOGIN(){
     printf("\nPassword: ");
     scanf("%8s", pass);
     
-    strcpy(msg, "SEND ");
-    strcat(msg, "LOGIN ");
+    //strcpy(msg, "SEND ");
+    strcpy(msg, "LOGIN ");
     strcat(msg, user);
     strcat(msg, " ");
     strcat(msg, pass);

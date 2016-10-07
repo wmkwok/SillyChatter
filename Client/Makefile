@@ -4,7 +4,7 @@ LDFLAGS = -g
 
 all: clean client
 
-client: client_server.o registration.o
+client: client.o registration.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
 %.o: %.c
