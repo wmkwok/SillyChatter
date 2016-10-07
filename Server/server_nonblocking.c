@@ -80,6 +80,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
       if(REGISTER(newMsg)){
 	users[usrIndex].name = (char *)malloc(strstr(newMsg, " ") - newMsg); 
 	strcpy(users[usrIndex].name, strsep(&newMsg, " "));
+	printf("also added user: %s\n", users[usrIndex].name);
 	return 1;
       }
     }
@@ -89,7 +90,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
       if(LOGIN(newMsg)){
 	users[usrIndex].name = (char *)malloc(strstr(newMsg, " ") - newMsg + 1); 
 	strcpy(users[usrIndex].name, strsep(&newMsg, " "));
-	//printf("also added user: %s\n", users[usrIndex].name);
+	printf("also added user: %s\n", users[usrIndex].name);
       }
     }
     
@@ -266,7 +267,7 @@ void DoServer(int svrPort, int maxConcurrency) {
 	//send response, IF we received something that is...
 	if (connStat[i].nRecv != 0) {
 	  int size = connStat[i].nRecv;
-	  if (Send_NonBlocking(fd, (BYTE *)"received", size, &connStat[i], &peers[i]) < 0 || connStat[i].nSent == size) {
+	  if (Send_NonBlocking(fd, (BYTE *)"received", 8, &connStat[i], &peers[i]) < 0 || connStat[i].nSent == size) {
 	    RemoveConnection(i);
 	    goto NEXT_CONNECTION;
 	  }
