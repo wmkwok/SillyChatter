@@ -11,6 +11,9 @@ Connection shouldn't be established until user logs in or sucessfully registers.
 ###Communicating
 All communication from client to server all start with an all caps command, followed by it's parameters.
 e.g REGISTER myuser mypass
+- REGISTER username password
+- LOGIN username password
+- SEND message
 
 ###Disconnecting
 
