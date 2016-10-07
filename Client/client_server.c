@@ -12,7 +12,7 @@
 #include <stdarg.h>
 #include <time.h>
 #include <poll.h>
-#include "registration.h"
+#include "commands.h"
 
 #define MAX_REQUEST_SIZE 10000000
 #define MAX_CONCURRENCY_LIMIT 2
@@ -216,7 +216,7 @@ void DoReceive(){
       //send_create(msg);
     }
   }
-  close(sockFD);b
+  close(sockFD);
 }
 
 

@@ -4,3 +4,4 @@ int LOGIN(void);
 int LOGOUT(void);
 
 void help(void);
+void ONLINE(void);

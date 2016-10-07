@@ -105,3 +105,8 @@ int LOGOUT(){
 void help(){
   printf("no help for u\n");
 }
+
+
+void ONLINE(){
+  DoClient("54.245.33.37", 7295, "ONLINE", 7);
+}
