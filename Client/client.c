@@ -11,7 +11,7 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <time.h>
-#include "registration.h"
+#include "commands.h"
 
 //re-define things as a certain type
 typedef unsigned char BYTE;
@@ -231,6 +231,7 @@ int main(){
     i = scanf(" %500[^\n]s", msg);
     if(i > 0){
       if(!strcmp(msg, "/help")) help();
+      else if(!strcmp(msg, "/online")) ONLINE();
       else if(!strcmp(msg, "/quit")){printf("quit\n"); break;}
       else {
 	printf("you typed: %s\n", msg);
