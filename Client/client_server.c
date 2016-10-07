@@ -200,11 +200,6 @@ void DoReceive(){
     if(nReady < 0)
       Error("Ivalid poll() return value.");
     
-    /* //create an internet structure for clients(A.K.A. local or server) */
-    /* struct sockaddr_in clientAddr; */
-    /* socklen_t clientAddrLen = sizeof(clientAddr); */
-
-
     //if socket has incoming, recv
     if(peers[0].revents & POLLRDNORM){      
       //recv something from someone
@@ -220,33 +215,8 @@ void DoReceive(){
       //memset(&msg, 0, 512);
       //send_create(msg);
     }
-    //go through each connection and recv if it needs it
-    /* for(i=1; i<nConns; i++){ */
-    /*   if(peers[i].revents & (POLLRDNORM | POLLERR | POLLHUP)){//change any? */
-    /* 	int fd = peers[i].fd; */
-    /* 	//read request */
-    /* 	if(Recv_NonBlocking(fd, msg, MAX_MSG_SIZE, &peers[i], i) < 0){ */
-    /* 	  RemoveConnection(i); */
-    /* 	  goto NEXT_CONNECTION; */
-    /* 	} */
-    /* 	//send response a response --------------we may not need in this case */
-    /* 	if(Send_NonBlocking(fd, (BYTE *)"received", size, &peers[i]) < 0){ */
-    /* 	  RemoveConnection(i); */
-    /* 	  goto NEXT_CONNECTION; */
-    /* 	} */
-    /*   } */
-    /*   //if this needs to resume sending, then do so ---------we may not need in this case */
-    /*   if(peers[i].revents & POLLWRNORM){ */
-    /*   	if(Send_NonBlocking(peers[i].fd, msg, size, &peers[i]) < 0 ){ */
-    /*   	  RemoveConnection(i); */
-    /*   	  goto NEXT_CONNECTION; */
-    /*   	} */
-    /*   } */
-    /*   //NEXT CONNECTION is so we don't go through all the code */
-    /* NEXT_CONNECTION: */
-    /*   if (--nReady <= 0) break; */
-    /* } */
   }
+  close(sockFD);b
 }
 
 
