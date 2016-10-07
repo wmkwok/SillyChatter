@@ -42,25 +42,6 @@ void Log(const char * format, ...){
   fprintf(stderr, "%s\n", msg);
 }
 
-//generate random number use to send random request size.
-int GetRandom(int min, int max){
-  DWORD r = 0;
-  int i;
-  for (i=0; i<4; i++){
-    r = (r | (DWORD)(rand() % 256)) << 8;
-  }
-  return (int)(r % (max-min+1) + min);
-}
-
-//checks the data, this is test so sends alphabet, we know it should be alphabet
-//dont think we need this anymore
-void CheckData(BYTE * buf, int size){
-  int i;
-  for (i=0; i<size; i++)
-    if (buf[i] != 'A' + i % 26)
-      Error("Received wrong data.");
-}
-
 /**************************send/recieve functions*************************/
 //send function, takes a socket file descriptor, data, and length
 int Send_Blocking(int sockFD, const BYTE * data, int len){
