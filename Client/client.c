@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <time.h>
+#include <pthread.h>
 #include "registration.h"
 
 //re-define things as a certain type
@@ -18,6 +19,8 @@ typedef unsigned char BYTE;
 typedef unsigned int DWORD;
 typedef unsigned short WORD;
 
+const char * serverIP = "54.245.33.37";
+//int port = 7295;
 int inSend = 0; //for stopping DoReceive and send msg
 
 /**********************utility functions********************/
@@ -40,25 +43,6 @@ void Log(const char * format, ...){
   vsprintf(msg, format, argptr);
   va_end(argptr);
   fprintf(stderr, "%s\n", msg);
-}
-
-//generate random number use to send random request size.
-int GetRandom(int min, int max){
-  DWORD r = 0;
-  int i;
-  for (i=0; i<4; i++){
-    r = (r | (DWORD)(rand() % 256)) << 8;
-  }
-  return (int)(r % (max-min+1) + min);
-}
-
-//checks the data, this is test so sends alphabet, we know it should be alphabet
-//dont think we need this anymore
-void CheckData(BYTE * buf, int size){
-  int i;
-  for (i=0; i<size; i++)
-    if (buf[i] != 'A' + i % 26)
-      Error("Received wrong data.");
 }
 
 /**************************send/recieve functions*************************/

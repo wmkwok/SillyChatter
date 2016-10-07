@@ -39,17 +39,20 @@ printf("--------------------Registration--------------------\nUsername and Passw
     scanf("%9s", apass);
     if(!strcmp(apass, pass)){
       //send check user
-      strcpy(check, "USER ");
+      strcpy(check, "SEND ");
+      strcat(check, "USER ");
       strcat(check, user);
       
-      if(DoClient("54.245.33.37", 7295, msg, sizeof(msg))){
-
-      //send user registration request
-      strcpy(msg, "REGISTER ");
-      strcat(msg, user);
-      strcat(msg, " ");
-      strcat(msg, pass);
-      DoClient("54.245.33.37", 7295, msg, sizeof(msg));
+      //if(DoClient("54.245.33.37", 7295, msg, sizeof(msg))){
+      if(1){
+	//send user registration request
+	//strcpy(msg, "SEND ");
+	strcat(msg, "REGISTER ");
+	strcat(msg, user);
+	strcat(msg, " ");
+	strcat(msg, pass);
+	DoClient("54.245.33.37", 7295, msg, sizeof(msg));
+	printf("sending register %s \n", msg);
       }
       else{
 	printf("username taken\n");
@@ -80,8 +83,9 @@ int LOGIN(){
     
     printf("\nPassword: ");
     scanf("%8s", pass);
-
-    strcpy(msg, "LOGIN ");
+    
+    strcpy(msg, "SEND ");
+    strcat(msg, "LOGIN ");
     strcat(msg, user);
     strcat(msg, " ");
     strcat(msg, pass);
