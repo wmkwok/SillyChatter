@@ -105,6 +105,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
       return 0;
     }
   }
+  memset(msg, 0, 512);
   return 0;
 }
 
@@ -179,7 +180,8 @@ void DoServer(int svrPort, int maxConcurrency) {
   //a BYTE array to store incoming msg
   int i;
   BYTE msg[MAX_MSG_SIZE];
-  
+  char * send_back = "received from server";
+
   int listenFD = socket(AF_INET, SOCK_STREAM, 0);
   //make sure listener was made
   if (listenFD < 0) {
@@ -258,22 +260,19 @@ void DoServer(int svrPort, int maxConcurrency) {
       if (peers[i].revents & (POLLRDNORM | POLLERR | POLLHUP)) {
 	int fd = peers[i].fd;
 	//read request
-	if (connStat[i].nRecv < 4) {  
-	  if (Recv_NonBlocking(fd, msg, MAX_MSG_SIZE, &connStat[i], &peers[i], i) < 0) {
-	    RemoveConnection(i);
-	    goto NEXT_CONNECTION;
-	  }
+	if (Recv_NonBlocking(fd, msg, MAX_MSG_SIZE, &connStat[i], &peers[i], i) < 0) {
+	  RemoveConnection(i);
+	  goto NEXT_CONNECTION;
 	}
-	//send response, IF we received something that is...
-	if (connStat[i].nRecv != 0) {
+	else{
+	  //send response, IF we received something that is...
 	  int size = connStat[i].nRecv;
-	  if (Send_NonBlocking(fd, (BYTE *)"received", size, &connStat[i], &peers[i]) < 0 || connStat[i].nSent == size) {
+	  if (Send_NonBlocking(fd, (BYTE *)send_back, strlen(send_back)+1, &connStat[i], &peers[i]) < 0) {
 	    RemoveConnection(i);
 	    goto NEXT_CONNECTION;
 	  }
 	}
       }
-      
       //if this needs to resume sending, then do so
       if (peers[i].revents & POLLWRNORM) {
 	int size = connStat[i].nRecv;
