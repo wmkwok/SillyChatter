@@ -102,6 +102,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
 int Send_NonBlocking(int sockFD, const BYTE * data, int len, struct pollfd * pPeer){
   int nSent = 0;
   while(nSent < len){
+    printf("sending...");
     //returns number of sent bytes
     int n = send(sockFD, data+nSent, len-nSent, 0);
     if(n>=0) nSent += n;
@@ -212,7 +213,7 @@ void DoReceive(){
       fgets(msg, 500, stdin);
       printf("got %s from stdin size %d\n", msg, strlen(msg));
       Send_NonBlocking(peers[0].fd, msg, strlen(msg) + 1, &peers[0]);
-      //memset(&msg, 0, 512);
+      memset(&msg, 0, 512);
       //send_create(msg);
     }
   }
