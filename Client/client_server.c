@@ -213,7 +213,7 @@ void DoReceive(){
       fgets(msg, 500, stdin);
       printf("got %s from stdin size %d\n", msg, strlen(msg));
       Send_NonBlocking(peers[0].fd, msg, strlen(msg) + 1, &peers[0]);
-      memset(&msg, 0, 512);
+      //memset(&msg, 0, 512);
       //send_create(msg);
     }
   }
