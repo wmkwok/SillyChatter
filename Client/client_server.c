@@ -87,7 +87,6 @@ BYTE * send_create(BYTE * msg){
 int MsgHandle(BYTE * msg, int usrIndex){
   //if sent by local, send to server
   //if sent by server, print or OK
-  printf("received msg %s\n", msg);
   char * token;
   char * newMsg = (char *)msg;
 
@@ -102,7 +101,6 @@ int MsgHandle(BYTE * msg, int usrIndex){
 int Send_NonBlocking(int sockFD, const BYTE * data, int len, struct pollfd * pPeer){
   int nSent = 0;
   while(nSent < len){
-    printf("sending...");
     //returns number of sent bytes
     int n = send(sockFD, data+nSent, len-nSent, 0);
     if(n>=0) nSent += n;
@@ -209,9 +207,8 @@ void DoReceive(){
     //if stdin has incoming, take and send
     if(peers[1].revents & POLLIN){
       //take stdin input and process and send what it returns
-      //int size = scanf("%500[^\n]s", msg);
       fgets(msg, 500, stdin);
-      printf("got %s from stdin size %d\n", msg, strlen(msg));
+      //printf("got %s from stdin size %d\n", msg, strlen(msg));
       Send_NonBlocking(peers[0].fd, msg, strlen(msg) + 1, &peers[0]);
       //memset(&msg, 0, 512);
       //send_create(msg);
