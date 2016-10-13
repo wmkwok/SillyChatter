@@ -24,12 +24,12 @@ int LOGIN(char * login){
   FILE *fp;
   int len = strlen(login) + 1;
   fp = fopen("user.txt", "r");
-  while(fgets(logins, len, (FILE *)fp) != NULL){
+  while(fp != NULL && fgets(logins, len, (FILE *)fp) != NULL){
     if(!strcmp(logins, login)){
       printf("sucessful login\n");
       return 1;
     }
   }
-  fclose(fp);
+  if(fp != NULL) fclose(fp);
   return 0;
 }
