@@ -71,8 +71,9 @@ void Log(const char * format, ...) {
 int MsgHandle(BYTE * msg, int usrIndex){
   printf("Received msg %s\n",msg);
   char * token;
-  char * newMsg = (char *)msg;
-
+  char * newMsg = malloc(strlen(msg)+1);
+  strcpy(newMsg, (char *)msg);
+  
   //receive a connection request
   if(!strcmp(newMsg, "CONNECT")) return 0;
   if((token = strsep(&newMsg, " ")) != NULL){
@@ -105,7 +106,6 @@ int MsgHandle(BYTE * msg, int usrIndex){
       return 0;
     }
   }
-  memset(msg, 0, 512);
   return 0;
 }
 
@@ -136,6 +136,7 @@ int Send_NonBlocking(int sockFD, const BYTE * data, int len, struct CONN_STAT * 
 //recieves something from file descriptor(socket), nonblocking.
 //Takes extra usrIndex integer as used in peers and connStat, needed for knowing who sent it to server
 int Recv_NonBlocking(int sockFD, BYTE * data, int len, struct CONN_STAT * pStat, struct pollfd * pPeer, int usrIndex) {
+  pStat->nRecv = 0;
   while (pStat->nRecv < len) {
     int n = recv(sockFD, data + pStat->nRecv, len - pStat->nRecv, 0);
     if (n > 0) {
