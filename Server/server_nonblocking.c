@@ -22,6 +22,8 @@ typedef unsigned short WORD;
 #define MAX_CONCURRENCY_LIMIT 64
 #define MAX_MSG_SIZE 512
 
+BYTE msg[MAX_MSG_SIZE];
+
 //structure for a connection to record their status
 struct CONN_STAT {
   int size;//0 if unknown yet
@@ -71,7 +73,7 @@ void Log(const char * format, ...) {
 int MsgHandle(BYTE * msg, int usrIndex){
   printf("Received msg %s\n",msg);
   char * token;
-  char * newMsg = malloc(strlen(msg)+1);
+  char * newMsg = malloc(strlen((char *)msg)+1);
   strcpy(newMsg, (char *)msg);
   
   //receive a connection request
@@ -96,8 +98,14 @@ int MsgHandle(BYTE * msg, int usrIndex){
     
     //receive send public message request
     else if(!strcmp(token, "SEND")){
-      printf("%s said: %s\n", users[usrIndex].name, newMsg);
-      return 0;
+      if(users[usrIndex].name != NULL){
+	printf("%s said: %s\n", users[usrIndex].name, newMsg);
+	return 0;
+      }
+      else{
+	printf("%s said: %s\n", users[usrIndex].addr, newMsg);
+	return 0;	
+      }
     }
     
     //some sort of problem with msg
@@ -117,19 +125,22 @@ int Send_NonBlocking(int sockFD, const BYTE * data, int len, struct CONN_STAT * 
   while (pStat->nSent < len) {
     int n = send(sockFD, data + pStat->nSent, len - pStat->nSent, 0);
     if (n >= 0) {
+      printf("sent: %d\n", n);
       pStat->nSent += n;
     } else if (n < 0 && (errno == ECONNRESET || errno == EPIPE)) {
       Log("Connection closed.");
       close(sockFD);
       return -1;
     } else if (n < 0 && (errno == EWOULDBLOCK)) {
-      pPeer->events |= POLLWRNORM;
+      printf("EWOULDBLOCK\n");
+      //pPeer->events |= POLLWRNORM;
       return 0;
     } else {
       Error("Unexpected send error %d: %s", errno, strerror(errno));
     }
   }
-  pPeer->events &= ~POLLWRNORM;
+  printf("~POLLWRNORM\n");
+  //pPeer->events &= ~POLLWRNORM;
   return 0;
 }
 
@@ -180,8 +191,7 @@ void DoServer(int svrPort, int maxConcurrency) {
   //create some needed variables: i for loop, listening socket
   //a BYTE array to store incoming msg
   int i;
-  BYTE msg[MAX_MSG_SIZE];
-  char * send_back = "received from server";
+  char send_back[512];
 
   int listenFD = socket(AF_INET, SOCK_STREAM, 0);
   //make sure listener was made
@@ -268,10 +278,18 @@ void DoServer(int svrPort, int maxConcurrency) {
 	else{
 	  //send response, IF we received something that is...
 	  int size = connStat[i].nRecv;
-	  if (Send_NonBlocking(fd, (BYTE *)send_back, strlen(send_back)+1, &connStat[i], &peers[i]) < 0) {
+	  if (Send_NonBlocking(fd, (BYTE *)msg, strlen((char*)msg)+1, &connStat[i], &peers[i]) < 0) {
 	    RemoveConnection(i);
 	    goto NEXT_CONNECTION;
 	  }
+	  /* int onlines; */
+	  /* for(onlines=1;onlines<=nConns;onlines++){ */
+	  /*   if (Send_NonBlocking(peers[onlines].fd, (BYTE *)msg, strlen((char*)msg)+1, &connStat[onlines], &peers[onlines]) < 0) { */
+	  /*     RemoveConnection(online); */
+	  /*     goto NEXT_CONNECTION; */
+	  /*   } */
+
+	  /* } */
 	}
       }
       //if this needs to resume sending, then do so
