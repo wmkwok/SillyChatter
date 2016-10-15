@@ -131,7 +131,7 @@ int Recv_NonBlocking(int sockFD, BYTE * data, int len, struct pollfd * pPeer, in
       exit(-1);
     }
     else if(n < 0 && (errno == EWOULDBLOCK)){
-      printf("recieved: %s\n", (char*)data);
+      printf("%s\n", (char*)data);
       return MsgHandle(data, usrIndex);
     }
     else
