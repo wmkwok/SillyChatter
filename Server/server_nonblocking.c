@@ -121,7 +121,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
 
 //Sends something to target file descriptor(socket), nonblocking.
 int Send_NonBlocking(int sockFD, const BYTE * data, int len, struct CONN_STAT * pStat, struct pollfd * pPeer) {
-  
+  pStat->nSent = 0;
   while (pStat->nSent < len) {
     int n = send(sockFD, data + pStat->nSent, len - pStat->nSent, 0);
     if (n >= 0) {
@@ -133,14 +133,14 @@ int Send_NonBlocking(int sockFD, const BYTE * data, int len, struct CONN_STAT * 
       return -1;
     } else if (n < 0 && (errno == EWOULDBLOCK)) {
       printf("EWOULDBLOCK\n");
-      //pPeer->events |= POLLWRNORM;
+      pPeer->events |= POLLWRNORM;
       return 0;
     } else {
       Error("Unexpected send error %d: %s", errno, strerror(errno));
     }
   }
   printf("~POLLWRNORM\n");
-  //pPeer->events &= ~POLLWRNORM;
+  pPeer->events &= ~POLLWRNORM;
   return 0;
 }
 
@@ -278,18 +278,17 @@ void DoServer(int svrPort, int maxConcurrency) {
 	else{
 	  //send response, IF we received something that is...
 	  int size = connStat[i].nRecv;
-	  if (Send_NonBlocking(fd, (BYTE *)msg, strlen((char*)msg)+1, &connStat[i], &peers[i]) < 0) {
-	    RemoveConnection(i);
-	    goto NEXT_CONNECTION;
-	  }
-	  /* int onlines; */
-	  /* for(onlines=1;onlines<=nConns;onlines++){ */
-	  /*   if (Send_NonBlocking(peers[onlines].fd, (BYTE *)msg, strlen((char*)msg)+1, &connStat[onlines], &peers[onlines]) < 0) { */
-	  /*     RemoveConnection(online); */
-	  /*     goto NEXT_CONNECTION; */
-	  /*   } */
-
+	  /* if (Send_NonBlocking(fd, (BYTE *)msg, strlen((char*)msg)+1, &connStat[i], &peers[i]) < 0) { */
+	  /*   RemoveConnection(i); */
+	  /*   goto NEXT_CONNECTION; */
 	  /* } */
+	  int onlines;
+	  for(onlines=1;onlines<=nConns;onlines++){
+	    if (Send_NonBlocking(peers[onlines].fd, (BYTE *)msg, strlen((char*)msg)+1, &connStat[onlines], &peers[onlines]) < 0) {
+	      RemoveConnection(onlines);
+	      goto NEXT_CONNECTION;
+	    }
+	  }
 	}
       }
       //if this needs to resume sending, then do so
