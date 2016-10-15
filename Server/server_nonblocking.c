@@ -130,6 +130,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
     
     //some sort of problem with msg
     else{
+      memset(msg, 0, MAX_MSG_SIZE);
       printf("no cmd\n");
       return 0;
     }
@@ -297,16 +298,18 @@ void DoServer(int svrPort, int maxConcurrency) {
 	}
 	else{
 	  //send response, IF we received something that is...
-	  int size = connStat[i].nRecv;
 	  /* if (Send_NonBlocking(fd, (BYTE *)msg, strlen((char*)msg)+1, &connStat[i], &peers[i]) < 0) { */
 	  /*   RemoveConnection(i); */
 	  /*   goto NEXT_CONNECTION; */
 	  /* } */
 	  int onlines;
 	  for(onlines=1;onlines<=nConns;onlines++){
-	    if (Send_NonBlocking(peers[onlines].fd, (BYTE *)msg, strlen((char*)msg)+1, &connStat[onlines], &peers[onlines]) < 0) {
-	      RemoveConnection(onlines);
-	      goto NEXT_CONNECTION;
+	    //printf("message lenth is %d when empty\n", strlen((char *)msg));
+	    if(strlen((char*)msg) != 0){
+	      if (Send_NonBlocking(peers[onlines].fd, (BYTE *)msg, strlen((char*)msg)+1, &connStat[onlines], &peers[onlines]) < 0) {
+		RemoveConnection(onlines);
+		goto NEXT_CONNECTION;
+	      }
 	    }
 	  }
 	}
