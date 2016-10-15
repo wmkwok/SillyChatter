@@ -78,11 +78,24 @@ int MsgHandle(BYTE * msg, int usrIndex){
   
   //receive a connection request
   if(!strcmp(newMsg, "CONNECT")) return 0;
+  if(!strcmp(newMsg, "ONLINES\n")){
+    int i;
+    strcpy((char *)msg, "Users Online:\n");
+    for(i=1;i<=nConns;i++){
+      if(users[i].name != NULL){
+	strcat((char *)msg, users[i].name);
+	strcat((char *)msg, "\n");
+      }
+    }
+    return 0;
+  }
   if((token = strsep(&newMsg, " ")) != NULL){
     if(!strcmp(token, "REGISTER")){
       if(REGISTER(newMsg)){
 	users[usrIndex].name = (char *)malloc(strstr(newMsg, " ") - newMsg); 
 	strcpy(users[usrIndex].name, strsep(&newMsg, " "));
+	strcpy((char *)msg, users[usrIndex].name);
+	strcat((char *)msg, " is online");
 	return 1;
       }
     }
@@ -92,7 +105,8 @@ int MsgHandle(BYTE * msg, int usrIndex){
       if(LOGIN(newMsg)){
 	users[usrIndex].name = (char *)malloc(strstr(newMsg, " ") - newMsg + 1); 
 	strcpy(users[usrIndex].name, strsep(&newMsg, " "));
-	//printf("also added user: %s\n", users[usrIndex].name);
+	strcpy((char *)msg, users[usrIndex].name);
+	strcat((char *)msg, " is online");
       }
     }
     
@@ -100,10 +114,16 @@ int MsgHandle(BYTE * msg, int usrIndex){
     else if(!strcmp(token, "SEND")){
       if(users[usrIndex].name != NULL){
 	printf("%s said: %s\n", users[usrIndex].name, newMsg);
+	strcpy((char *)msg, users[usrIndex].name);
+	strcat((char *)msg, " said: ");
+	strcat((char *)msg, newMsg);
 	return 0;
       }
       else{
 	printf("%s said: %s\n", users[usrIndex].addr, newMsg);
+	strcpy((char *)msg, users[usrIndex].addr);
+	strcat((char *)msg, " said: ");
+	strcat((char *)msg, newMsg);
 	return 0;	
       }
     }
