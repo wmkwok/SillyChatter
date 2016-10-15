@@ -131,6 +131,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
   if(!strcmp(newMsg, "LOGOUT\n")){
     strcpy((char *)msg, users[usrIndex].name);
     strcat((char *)msg, " is offline");
+    RemoveConnection(usrIndex);
     return 0;
   }
   
