@@ -23,6 +23,7 @@ typedef unsigned short WORD;
 #define MAX_MSG_SIZE 512
 
 BYTE msg[MAX_MSG_SIZE];
+int pmsg = 0;
 
 //structure for a connection to record their status
 struct CONN_STAT {
@@ -68,6 +69,44 @@ void Log(const char * format, ...) {
   fprintf(stderr, "%s\n", msg);
 }
 
+/****************************************Communication functions*************************************/
+
+//Sends something to target file descriptor(socket), nonblocking.
+int Send_NonBlocking(int sockFD, const BYTE * data, int len, struct CONN_STAT * pStat, struct pollfd * pPeer) {
+  pStat->nSent = 0;
+  while (pStat->nSent < len) {
+    int n = send(sockFD, data + pStat->nSent, len - pStat->nSent, 0);
+    if (n >= 0) {
+      printf("sent: %d\n", n);
+      pStat->nSent += n;
+    } else if (n < 0 && (errno == ECONNRESET || errno == EPIPE)) {
+      Log("Connection closed.");
+      close(sockFD);
+      return -1;
+    } else if (n < 0 && (errno == EWOULDBLOCK)) {
+      printf("EWOULDBLOCK\n");
+      pPeer->events |= POLLWRNORM;
+      return 0;
+    } else {
+      Error("Unexpected send error %d: %s", errno, strerror(errno));
+    }
+  }
+  printf("~POLLWRNORM\n");
+  pPeer->events &= ~POLLWRNORM;
+  return 0;
+}
+
+//Removes a connection from peers, connStat, as well as users array. Decreases number of connections.
+void RemoveConnection(int i) {
+  close(peers[i].fd);
+  if (i < nConns) {
+    memmove(peers + i, peers + i + 1, (nConns-i) * sizeof(struct pollfd));
+    memmove(connStat + i, connStat + i + 1, (nConns-i) * sizeof(struct CONN_STAT));
+    memmove(users + i, users + i + 1, (nConns-i) * sizeof(struct user));
+  }
+  nConns--;
+}
+
 //after recv reads msg it is picked apart and
 //executed by MsgHandle.
 int MsgHandle(BYTE * msg, int usrIndex){
@@ -77,7 +116,6 @@ int MsgHandle(BYTE * msg, int usrIndex){
   strcpy(newMsg, (char *)msg);
   
   //receive a connection request
-  if(!strcmp(newMsg, "CONNECT")) return 0;
   if(!strcmp(newMsg, "ONLINES\n")){
     int i;
     strcpy((char *)msg, "Users Online:\n");
@@ -89,6 +127,13 @@ int MsgHandle(BYTE * msg, int usrIndex){
     }
     return 0;
   }
+
+  if(!strcmp(newMsg, "LOGOUT\n")){
+    strcpy((char *)msg, users[usrIndex].name);
+    strcat((char *)msg, " is offline");
+    return 0;
+  }
+  
   if((token = strsep(&newMsg, " ")) != NULL){
     if(!strcmp(token, "REGISTER")){
       if(REGISTER(newMsg)){
@@ -119,14 +164,25 @@ int MsgHandle(BYTE * msg, int usrIndex){
 	strcat((char *)msg, newMsg);
 	return 0;
       }
-      else{
-	printf("%s said: %s\n", users[usrIndex].addr, newMsg);
-	strcpy((char *)msg, users[usrIndex].addr);
-	strcat((char *)msg, " said: ");
-	strcat((char *)msg, newMsg);
-	return 0;	
-      }
     }
+      //receive send public message request
+      else if(!strcmp(token, "PSEND")){
+	if((token = strsep(&newMsg, " ")) != NULL){
+	  int i;
+	  for(i=1;i<=nConns;i++){
+	    if(!strcmp(token, users[i].name)){
+	      strcpy((char *)msg, "PM from ");
+	      strcat((char *)msg, users[usrIndex].name);
+	      strcat((char *)msg, ":");
+	      strcat((char *)msg, newMsg);
+	      Send_NonBlocking(peers[i].fd, msg, strlen((char*)msg), &connStat[i], &peers[i]);
+	      break;
+	    }
+	  }
+	  pmsg = 1;
+	}
+	return 0;
+      }
     
     //some sort of problem with msg
     else{
@@ -138,32 +194,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
   return 0;
 }
 
-/****************************************Communication functions*************************************/
 
-//Sends something to target file descriptor(socket), nonblocking.
-int Send_NonBlocking(int sockFD, const BYTE * data, int len, struct CONN_STAT * pStat, struct pollfd * pPeer) {
-  pStat->nSent = 0;
-  while (pStat->nSent < len) {
-    int n = send(sockFD, data + pStat->nSent, len - pStat->nSent, 0);
-    if (n >= 0) {
-      printf("sent: %d\n", n);
-      pStat->nSent += n;
-    } else if (n < 0 && (errno == ECONNRESET || errno == EPIPE)) {
-      Log("Connection closed.");
-      close(sockFD);
-      return -1;
-    } else if (n < 0 && (errno == EWOULDBLOCK)) {
-      printf("EWOULDBLOCK\n");
-      pPeer->events |= POLLWRNORM;
-      return 0;
-    } else {
-      Error("Unexpected send error %d: %s", errno, strerror(errno));
-    }
-  }
-  printf("~POLLWRNORM\n");
-  pPeer->events &= ~POLLWRNORM;
-  return 0;
-}
 
 //recieves something from file descriptor(socket), nonblocking.
 //Takes extra usrIndex integer as used in peers and connStat, needed for knowing who sent it to server
@@ -195,18 +226,6 @@ void SetNonBlockIO(int fd) {
     Error("Cannot set nonblocking I/O.");
   }
 }
-
-//Removes a connection from peers, connStat, as well as users array. Decreases number of connections.
-void RemoveConnection(int i) {
-  close(peers[i].fd);
-  if (i < nConns) {
-    memmove(peers + i, peers + i + 1, (nConns-i) * sizeof(struct pollfd));
-    memmove(connStat + i, connStat + i + 1, (nConns-i) * sizeof(struct CONN_STAT));
-    memmove(users + i, users + i + 1, (nConns-i) * sizeof(struct user));
-  }
-  nConns--;
-}
-
 
 void DoServer(int svrPort, int maxConcurrency) {
   //create some needed variables: i for loop, listening socket
@@ -297,20 +316,21 @@ void DoServer(int svrPort, int maxConcurrency) {
 	  goto NEXT_CONNECTION;
 	}
 	else{
-	  //send response, IF we received something that is...
-	  /* if (Send_NonBlocking(fd, (BYTE *)msg, strlen((char*)msg)+1, &connStat[i], &peers[i]) < 0) { */
-	  /*   RemoveConnection(i); */
-	  /*   goto NEXT_CONNECTION; */
-	  /* } */
-	  int onlines;
-	  for(onlines=1;onlines<=nConns;onlines++){
-	    //printf("message lenth is %d when empty\n", strlen((char *)msg));
-	    if(strlen((char*)msg) != 0){
-	      if (Send_NonBlocking(peers[onlines].fd, (BYTE *)msg, strlen((char*)msg)+1, &connStat[onlines], &peers[onlines]) < 0) {
-		RemoveConnection(onlines);
-		goto NEXT_CONNECTION;
+	  if(pmsg == 0){
+	    int onlines;
+	    for(onlines=1;onlines<=nConns;onlines++){
+	      //printf("message lenth is %d when empty\n", strlen((char *)msg));
+	      if(strlen((char*)msg) != 0){
+		if (Send_NonBlocking(peers[onlines].fd, (BYTE *)msg, strlen((char*)msg)+1, &connStat[onlines], &peers[onlines]) < 0) {
+		  RemoveConnection(onlines);
+		  goto NEXT_CONNECTION;
+		}
 	      }
 	    }
+	  }
+	  else{
+	    pmsg = 0;
+	    continue;
 	  }
 	}
       }
