@@ -113,6 +113,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
   printf("Received msg %s\n",msg);
   char * token;
   char * newMsg = malloc(strlen((char *)msg)+1);
+  char * begin = newMsg;
   strcpy(newMsg, (char *)msg);
   
   //receive a connection request
@@ -125,6 +126,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
 	strcat((char *)msg, "\n");
       }
     }
+    free(begin);
     return 0;
   }
 
@@ -132,6 +134,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
     strcpy((char *)msg, users[usrIndex].name);
     strcat((char *)msg, " is offline");
     RemoveConnection(usrIndex);
+    free(begin);
     return 0;
   }
   
@@ -142,18 +145,37 @@ int MsgHandle(BYTE * msg, int usrIndex){
 	strcpy(users[usrIndex].name, strsep(&newMsg, " "));
 	strcpy((char *)msg, users[usrIndex].name);
 	strcat((char *)msg, " is online");
+	free(begin);
 	return 1;
+      }
+      else{
+	printf("REGISTER failed.");
+	free(begin);
+	return 0;
       }
     }
     
     //receive login request
     else if(!strcmp(token, "LOGIN")){
+      int i;
+      char * name = (char *)malloc(strstr(newMsg, " ") - newMsg + 1);
+      strcpy(name, strsep(&newMsg, " "));
       if(LOGIN(newMsg)){
-	users[usrIndex].name = (char *)malloc(strstr(newMsg, " ") - newMsg + 1); 
-	strcpy(users[usrIndex].name, strsep(&newMsg, " "));
+	for(i=1;i<=nConns;i++){
+	  if(users[i].name != NULL && !strcmp(users[i].name, name)){
+	    RemoveConnection(i);
+	    break;
+	  }
+	}
+	printf("before setting name \n");
+	users[usrIndex].name = (char *)malloc(strlen(name)); 
+	strcpy(users[usrIndex].name, name);
 	strcpy((char *)msg, users[usrIndex].name);
 	strcat((char *)msg, " is online");
+	printf("done setting name \n");
       }
+      free(begin);
+      return 0;
     }
     
     //receive send public message request
@@ -163,6 +185,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
 	strcpy((char *)msg, users[usrIndex].name);
 	strcat((char *)msg, " said: ");
 	strcat((char *)msg, newMsg);
+	free(begin);
 	return 0;
       }
     }
@@ -182,13 +205,14 @@ int MsgHandle(BYTE * msg, int usrIndex){
 	  }
 	  pmsg = 1;
 	}
+	free(begin);
 	return 0;
       }
     
     //some sort of problem with msg
     else{
       memset(msg, 0, MAX_MSG_SIZE);
-      printf("no cmd\n");
+      free(begin);
       return 0;
     }
   }
