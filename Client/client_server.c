@@ -87,7 +87,6 @@ BYTE * send_create(BYTE * msg){
 int MsgHandle(BYTE * msg, int usrIndex){
   //if sent by local, send to server
   //if sent by server, print or OK
-  printf("received msg %s\n", msg);
   char * token;
   char * newMsg = (char *)msg;
 
@@ -111,13 +110,13 @@ int Send_NonBlocking(int sockFD, const BYTE * data, int len, struct pollfd * pPe
       return -1;
     }
     else if(n < 0 && (errno == EWOULDBLOCK)){
-      pPeer->events |= POLLWRNORM;
+      //pPeer->events |= POLLWRNORM;
       return 0;
     }
     else
       Error("Unexpected error %d: %s.", errno, strerror(errno));
   }
-  pPeer->events &= ~POLLWRNORM;
+  //pPeer->events &= ~POLLWRNORM;
   return 0;
 }
 
@@ -181,39 +180,32 @@ void DoReceive(){
   nConns = 1;
   memset(peers, 0, sizeof(peers));
   peers[0].fd = sockFD;
-  peers[0].events = POLLRDNORM;
+  peers[0].events = POLLIN | POLLOUT;
+  peers[0].revents = 0;
   //set to non-blocking
-  SetNonBlockIO(sockFD);
+  SetNonBlockIO(peers[0].fd);
 
 
   //set up poll for stdin?
   peers[1].fd = fileno(stdin);
   peers[1].events = POLLIN;
+  peers[1].revents = 0;
   SetNonBlockIO(peers[1].fd);
   
   int connID = 0;
   while(1){
 
-    //number of needy connections
     int nReady = poll(peers, 2, -1); //number of connections plus listener & stdin
-    //if it's negative there's a big problem
     if(nReady < 0)
       Error("Ivalid poll() return value.");
     
-    //if socket has incoming, recv
-    if(peers[0].revents & POLLRDNORM){      
-      //recv something from someone
+    if(peers[0].revents & POLLIN){      
       Recv_NonBlocking(peers[0].fd, msg, MAX_MSG_SIZE, &peers[0], 0);
     }
-    //if stdin has incoming, take and send
     if(peers[1].revents & POLLIN){
-      //take stdin input and process and send what it returns
-      //int size = scanf("%500[^\n]s", msg);
       fgets(msg, 500, stdin);
-      printf("got %s from stdin size %d\n", msg, strlen(msg));
       Send_NonBlocking(peers[0].fd, msg, strlen(msg) + 1, &peers[0]);
-      //memset(&msg, 0, 512);
-      //send_create(msg);
+
     }
   }
   close(sockFD);
