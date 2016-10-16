@@ -10,9 +10,6 @@ typedef unsigned char BYTE;
  */
 const char * severIP = "54.245.33.37";
 int port = 7295;
-int nReq = 50;
-int minSize = 10000;
-int maxSize = 100000;
 
 int REGISTER(){
   char user[10];
@@ -42,8 +39,7 @@ printf("--------------------Registration--------------------\nUsername and Passw
       strcpy(check, "SEND ");
       strcat(check, "USER ");
       strcat(check, user);
-      
-      //if(DoClient("54.245.33.37", 7295, msg, sizeof(msg))){
+
       if(1){
 	//send user registration request
 	//strcpy(msg, "SEND ");
@@ -51,7 +47,6 @@ printf("--------------------Registration--------------------\nUsername and Passw
 	strcat(msg, user);
 	strcat(msg, " ");
 	strcat(msg, pass);
-	DoClient("54.245.33.37", 7295, msg, sizeof(msg));
 	printf("sending register %s \n", msg);
       }
       else{
@@ -79,22 +74,20 @@ int LOGIN(){
   while(1){
     printf("Username: ");
     scanf("%8s", user);
-    //check if user is doable
     
     printf("\nPassword: ");
     scanf("%8s", pass);
     
-    //strcpy(msg, "SEND ");
     strcpy(msg, "LOGIN ");
     strcat(msg, user);
     strcat(msg, " ");
     strcat(msg, pass);
-    DoClient("54.245.33.37", 7295, msg, sizeof(msg));
     return 0;
   }
   printf("login %s\n", msg);
   return 0;
 }
+
 
 int LOGOUT(){
   printf("logon\n");
