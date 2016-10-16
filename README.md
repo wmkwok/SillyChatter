@@ -2,40 +2,49 @@
 Something along the lines of a super unsafe and crashy chat server >_&lt;
 ###Registration
 The user will not be allowed to send any messages until login or registration is done. 
-- **Registering:** Client will verify valid user/pass and send register msg to server. Server will verify it and add it to a list of registered users. Upon sucessful registration users will be automatically logged in.
-- **Un-Registering:** User have an option to unregister their account. A unregister msg will be sent to server. The username will be freed up. Not sure if this will be implemented yet.
+- **Registering:** Client will send register msg to server. Server will add it to a list of registered users. Upon sucessful registration users will be automatically logged in.
 
 ###Connecting
-Connection shouldn't be established until user logs in or sucessfully registers. After user register/login the server will either receive the REGISTER or LOGIN msg, and accept a connection. The server will fill info into peers,connStat, as well as record the user address in users. Users is an array of the user data structure.
+Connection is established before user logs in or sucessfully registers, so an ip address will represent anonymity. After user register/login the server will either receive the REGISTER or LOGIN msg and change the address to a username. The server will fill info into peers,connStat, as well as record the user address in users. Users is an array of the user data structure.
 
 ###Communicating
 All communication from client to server all start with an all caps command, followed by it's parameters.
 e.g REGISTER myuser mypass
 - REGISTER username password
 - LOGIN username password
+- LOGOUT
+- QUIT
 - SEND message
+- PSEND user message
+- WHOAMI
+- ONLINES
 
-###Disconnecting
+###PSEND
+PSEND will send a private message to an online user, assuming the user is online. If the user is not online, then a message will be sent back to sender notifying send failure.
 
+###LOGOUT & QUIT
+LOGOUT and QUIT will do the same. The server will simply remove the connection and client will recognize the disconnect, display a disconnection message, and quit the program.
+
+###WHOAMI
+In case the client doesn't know whether he/she has logged on, they can send this to check whether they are known as their IP address or their username.
+
+###ONLINES
+Server will send a list of all online clients here, not including anonymous users.
 
 ###Basic Function Descriptions
-
+- **Send_NonBlocking:** Sends a message to target address using the created socket connection.
+- **Recv_NonBlocking:** Recieves a message from socket file descriptor.
 
 ###New Function Descriptions
 ####client.c
-####client_registration.c
-- **int REGISTER(void):** prompts for a username and password between 4-8 characters and numbers. Send a request to server. Returns 0 if registration is sucessful. 
-- **int LOGIN():** promts for username and password. Send a request to server and returns 0 if login sucessful.
-- **int UNREGISTER():**
-- **int LOGOUT():**
+- **DoReceive():** Main function that would poll for any incoming messages from the server, any incoming typing from stdin, and send any messages to server.
 
 ####server.c
 - **int MsgHandle(char * msg, int usrIndex):** Takes in a msg and the index of the client that send the msg, pulls it apart and executes it. Doesn't really need to return anything really.
 
 ####server_registration.c
-- **int REGISTER(char * registration):** takes in the registration info and just sticks it into a file so far.
-- **int UNREGISTER(char * username):** Takes in a username and finds it in the file to delete it from registered users list.
-
+- **int REGISTER(char * registration):** takes in the registration info and just sticks it into a file.
+- **int LOGIN(char* login):** takes in login user and pass, attempts to find in registered list, and returns whether logged on or not.
 
 ###New Function Structures
 - **User** Used to store an online user and address. We might not need pass here.
