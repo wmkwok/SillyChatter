@@ -4,7 +4,7 @@ LDFLAGS = -g
 
 all: clean client
 
-client: client_server.o commands.o
+client: client_server.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
 %.o: %.c
