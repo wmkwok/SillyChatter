@@ -145,8 +145,9 @@ int MsgHandle(BYTE * msg, int usrIndex){
     return 0;
   }
 
-  if(!strcmp(newMsg, "LOGOUT\n")){
-    strcpy((char *)msg, users[usrIndex].name);
+  if(!strcmp(newMsg, "LOGOUT\n") || !strcmp(newMsg, "QUIT\n")){
+    printf("Removing user %s\n", (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name);
+    strcpy((char *)msg, (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name);
     strcat((char *)msg, " is offline");
     RemoveConnection(usrIndex);
     free(begin);
@@ -211,18 +212,28 @@ int MsgHandle(BYTE * msg, int usrIndex){
       else if(!strcmp(token, "PSEND")){
 	if((token = strsep(&newMsg, " ")) != NULL){
 	  int i;
+	  int found = 0;
 	  for(i=1;i<=nConns;i++){
 	    if(!strcmp(token, users[i].name)){
 	      strcpy((char *)msg, "PM from ");
 	      strcat((char *)msg, users[usrIndex].name);
 	      strcat((char *)msg, ":");
 	      strcat((char *)msg, newMsg);
+	      strcat((char *)msg, "\0");
+	      found = 1;
+	      pmsg = 1;
 	      Send_NonBlocking(peers[i].fd, msg, strlen((char*)msg), &connStat[i], &peers[i]);
 	      printf("SENT to %s: %s\n", (users[i].name == NULL)? users[i].addr:users[i].name, (char*)msg);
 	      break;
 	    }
 	  }
-	  pmsg = 1;
+	  if(!found){
+	    printf("PSEND failed: user %s not found\n", token);
+	    pmsg = 1;
+	    strcpy((char *)msg, "PSEND user not found online\n");
+	    Send_NonBlocking(peers[usrIndex].fd, msg, strlen((char*)msg), &connStat[usrIndex], &peers[usrIndex]);
+	    printf("SENT to %s: %s\n", (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name, (char*)msg);
+	  }
 	}
 	free(begin);
 	return 0;
