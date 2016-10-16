@@ -12,7 +12,7 @@
 #include <stdarg.h>
 #include <time.h>
 #include <poll.h>
-#include "commands.h"
+//#include "commands.h"
 
 #define MAX_REQUEST_SIZE 10000000
 #define MAX_CONCURRENCY_LIMIT 2
@@ -63,27 +63,7 @@ void Log(const char * format, ...){
   fprintf(stderr, "%s\n", msg);
 }
 
-BYTE * send_create(BYTE * msg){
-  char * token;
-  char * newMsg = (char *)msg;
-  char * reg = "REGISTER wmkwok forever";
-  char * log = "LOGIN test test";
-  if(!strcmp(newMsg, "/register")){
-    return (BYTE *)reg;
-    //go through register process and return register msg for sending
-    
-  }
-  else if(!strcmp(newMsg, "/login")){
-    return (BYTE *)log;
-    //go through login process and return login msg for sending
-  }
-  else{
-    return "another poop";
-    //assume it's a message and take apart to see if is PRIVMSG
-  }
-  return "poop";
-}
-
+/*****************************************
 int MsgHandle(BYTE * msg, int usrIndex){
   //if sent by local, send to server
   //if sent by server, print or OK
@@ -97,6 +77,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
   }
   return 0;
 }
+*****************************************/
 
 int Send_NonBlocking(int sockFD, const BYTE * data, int len, struct pollfd * pPeer){
   int nSent = 0;
@@ -110,13 +91,11 @@ int Send_NonBlocking(int sockFD, const BYTE * data, int len, struct pollfd * pPe
       return -1;
     }
     else if(n < 0 && (errno == EWOULDBLOCK)){
-      //pPeer->events |= POLLWRNORM;
       return 0;
     }
     else
       Error("Unexpected error %d: %s.", errno, strerror(errno));
   }
-  //pPeer->events &= ~POLLWRNORM;
   return 0;
 }
 
@@ -132,7 +111,7 @@ int Recv_NonBlocking(int sockFD, BYTE * data, int len, struct pollfd * pPeer, in
     }
     else if(n < 0 && (errno == EWOULDBLOCK)){
       printf("%s\n", (char*)data);
-      return MsgHandle(data, usrIndex);
+      return 0;
     }
     else
       Error("Unexpected recv error %d: %s.", errno, strerror(errno));
@@ -192,7 +171,6 @@ void DoReceive(){
   peers[1].revents = 0;
   SetNonBlockIO(peers[1].fd);
   
-  int connID = 0;
   while(1){
 
     int nReady = poll(peers, 2, -1); //number of connections plus listener & stdin
@@ -209,11 +187,6 @@ void DoReceive(){
     }
   }
   close(sockFD);
-}
-
-
-int DoClient(const char svrIP, int svrPort, char * msg, int size){
-  return 1;
 }
 
 void main(){
