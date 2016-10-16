@@ -16,7 +16,7 @@
 
 #define MAX_REQUEST_SIZE 10000000
 #define MAX_CONCURRENCY_LIMIT 2
-#define MAX_MSG_SIZE 512
+#define MAX_MSG_SIZE 4096
 
 //redefine types
 typedef unsigned char BYTE;
@@ -139,7 +139,7 @@ void DoReceive(){
   //create sneeded variables
   //a BYTE array to store msgs
   int i;
-  BYTE msg[512];
+  BYTE msg[4096];
 
   //initialize internet structure
   struct sockaddr_in serverAddr;
@@ -190,5 +190,6 @@ void DoReceive(){
 }
 
 void main(){
+  printf("Type HELP and hit enter for help\n");
   DoReceive();
 }
