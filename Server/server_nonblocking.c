@@ -77,7 +77,6 @@ int Send_NonBlocking(int sockFD, const BYTE * data, int len, struct CONN_STAT * 
   while (pStat->nSent < len) {
     int n = send(sockFD, data + pStat->nSent, len - pStat->nSent, 0);
     if (n >= 0) {
-      printf("sent: %d\n", n);
       pStat->nSent += n;
     } else if (n < 0 && (errno == ECONNRESET || errno == EPIPE)) {
       Log("Connection closed.");
@@ -91,7 +90,6 @@ int Send_NonBlocking(int sockFD, const BYTE * data, int len, struct CONN_STAT * 
       Error("Unexpected send error %d: %s", errno, strerror(errno));
     }
   }
-  printf("~POLLWRNORM\n");
   pPeer->events &= ~POLLWRNORM;
   return 0;
 }
@@ -110,17 +108,34 @@ void RemoveConnection(int i) {
 //after recv reads msg it is picked apart and
 //executed by MsgHandle.
 int MsgHandle(BYTE * msg, int usrIndex){
-  printf("Received msg %s\n",msg);
+  printf("%s: %s\n",users[usrIndex].addr, msg);
   char * token;
   char * newMsg = malloc(strlen((char *)msg)+1);
   char * begin = newMsg;
   strcpy(newMsg, (char *)msg);
   
   //receive a connection request
+  if(!strcmp(newMsg, "WHOAMI\n")){
+    strcpy((char *)msg, "You are: ");
+    if(users[usrIndex].name != NULL){
+      strcat((char *)msg, users[usrIndex].name);
+      strcat((char *)msg, "\n");
+    }
+    else{
+      strcat((char *)msg, users[usrIndex].addr);
+      strcat((char *)msg, "\n");
+    }
+    pmsg = 1;
+    Send_NonBlocking(peers[usrIndex].fd, msg, strlen((char*)msg), &connStat[usrIndex], &peers[usrIndex]);
+    printf("SENT to %s: %s\n", (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name, (char*)msg);
+    free(begin);
+    return 0;
+  }
+  
   if(!strcmp(newMsg, "ONLINES\n")){
     int i;
     strcpy((char *)msg, "Users Online:\n");
-    for(i=1;i<=nConns;i++){
+    for(i=1;i<=nConns+1;i++){
       if(users[i].name != NULL){
 	strcat((char *)msg, users[i].name);
 	strcat((char *)msg, "\n");
@@ -139,7 +154,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
   }
   
   if((token = strsep(&newMsg, " ")) != NULL){
-    if(!strcmp(token, "REGISTER")){
+    if(!strcmp(token, "REGISTER") && users[usrIndex].name == NULL){
       if(REGISTER(newMsg)){
 	users[usrIndex].name = (char *)malloc(strstr(newMsg, " ") - newMsg); 
 	strcpy(users[usrIndex].name, strsep(&newMsg, " "));
@@ -150,6 +165,10 @@ int MsgHandle(BYTE * msg, int usrIndex){
       }
       else{
 	printf("REGISTER failed.");
+	strcpy((char*)msg, "Registration failed! Make sure you aren't already logged on.\n");
+	pmsg = 1;
+	Send_NonBlocking(peers[usrIndex].fd, msg, strlen((char*)msg), &connStat[usrIndex], &peers[usrIndex]);
+	printf("SENT to %s: %s\n", (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name, (char*)msg);
 	free(begin);
 	return 0;
       }
@@ -158,21 +177,20 @@ int MsgHandle(BYTE * msg, int usrIndex){
     //receive login request
     else if(!strcmp(token, "LOGIN")){
       int i;
-      char * name = (char *)malloc(strstr(newMsg, " ") - newMsg + 1);
-      strcpy(name, strsep(&newMsg, " "));
       if(LOGIN(newMsg)){
+	char * name = (char *)malloc(strstr(newMsg, " ") - newMsg + 1);
+	strcpy(name, strsep(&newMsg, " "));
+	
 	for(i=1;i<=nConns;i++){
 	  if(users[i].name != NULL && !strcmp(users[i].name, name)){
 	    RemoveConnection(i);
 	    break;
 	  }
 	}
-	printf("before setting name \n");
 	users[usrIndex].name = (char *)malloc(strlen(name)); 
 	strcpy(users[usrIndex].name, name);
 	strcpy((char *)msg, users[usrIndex].name);
 	strcat((char *)msg, " is online");
-	printf("done setting name \n");
       }
       free(begin);
       return 0;
@@ -181,7 +199,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
     //receive send public message request
     else if(!strcmp(token, "SEND")){
       if(users[usrIndex].name != NULL){
-	printf("%s said: %s\n", users[usrIndex].name, newMsg);
+	//printf("%s said: %s\n", users[usrIndex].name, newMsg);
 	strcpy((char *)msg, users[usrIndex].name);
 	strcat((char *)msg, " said: ");
 	strcat((char *)msg, newMsg);
@@ -200,6 +218,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
 	      strcat((char *)msg, ":");
 	      strcat((char *)msg, newMsg);
 	      Send_NonBlocking(peers[i].fd, msg, strlen((char*)msg), &connStat[i], &peers[i]);
+	      printf("SENT to %s: %s\n", (users[i].name == NULL)? users[i].addr:users[i].name, (char*)msg);
 	      break;
 	    }
 	  }
@@ -256,8 +275,6 @@ void DoServer(int svrPort, int maxConcurrency) {
   //create some needed variables: i for loop, listening socket
   //a BYTE array to store incoming msg
   int i;
-  char send_back[512];
-
   int listenFD = socket(AF_INET, SOCK_STREAM, 0);
   //make sure listener was made
   if (listenFD < 0) {
@@ -295,8 +312,7 @@ void DoServer(int svrPort, int maxConcurrency) {
   peers[0].fd = listenFD;
   peers[0].events = POLLRDNORM;
   memset(connStat, 0, sizeof(connStat));
-  
-  int connID = 0;
+
   while (1) {//the main loop
     //number of needy connections
     int nReady = poll(peers, nConns + 1, -1);
@@ -344,11 +360,13 @@ void DoServer(int svrPort, int maxConcurrency) {
 	  if(pmsg == 0){
 	    int onlines;
 	    for(onlines=1;onlines<=nConns;onlines++){
-	      //printf("message lenth is %d when empty\n", strlen((char *)msg));
 	      if(strlen((char*)msg) != 0){
 		if (Send_NonBlocking(peers[onlines].fd, (BYTE *)msg, strlen((char*)msg)+1, &connStat[onlines], &peers[onlines]) < 0) {
 		  RemoveConnection(onlines);
 		  goto NEXT_CONNECTION;
+		}
+		else{
+		  printf("SENT to %s: %s\n", (users[onlines].name == NULL)? users[onlines].addr:users[onlines].name, (char*)msg);
 		}
 	      }
 	    }
@@ -386,6 +404,7 @@ int main(int argc, char * * argv) {
   int port = atoi(argv[1]);
   int maxConcurrency = atoi(argv[2]);
   //call DoServer
+  printf("Waiting for connections...\n");
   DoServer(port, maxConcurrency);
   
   return 0;
