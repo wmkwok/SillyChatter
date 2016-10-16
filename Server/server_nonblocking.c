@@ -20,7 +20,7 @@ typedef unsigned short WORD;
 
 #define MAX_REQUEST_SIZE 10000000
 #define MAX_CONCURRENCY_LIMIT 64
-#define MAX_MSG_SIZE 512
+#define MAX_MSG_SIZE 4096
 
 BYTE msg[MAX_MSG_SIZE];
 int pmsg = 0;
@@ -113,9 +113,24 @@ int MsgHandle(BYTE * msg, int usrIndex){
   char * newMsg = malloc(strlen((char *)msg)+1);
   char * begin = newMsg;
   strcpy(newMsg, (char *)msg);
-  
+  if(!strcmp(newMsg, "HELP\n")){
+    strcpy((char *)msg, "Available commands: \n");
+    strcat((char *)msg, "WHOAMI :shows your username tag when you message\n");
+    strcat((char *)msg, "REGISTER [username] [password]: registration for an account\n");
+    strcat((char *)msg, "LOGIN [username] [password]: log into an account\n");
+    strcat((char *)msg, "SEND [message]: sends a public message to all online users, anonymous included\n");
+    strcat((char *)msg, "PSEND [username] [password]: sends a private message to online user\n");
+    strcat((char *)msg, "QUIT: closes the connection and your client\n");
+    strcat((char *)msg, "LOGOUT: closes the connection and your client\n");
+    pmsg = 1;
+    Send_NonBlocking(peers[usrIndex].fd, msg, strlen((char*)msg), &connStat[usrIndex], &peers[usrIndex]);
+    printf("SENT to %s: %s\n", (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name, (char*)msg);
+    free(begin);
+    return 0;
+  }  
+
   //receive a connection request
-  if(!strcmp(newMsg, "WHOAMI\n")){
+  else if(!strcmp(newMsg, "WHOAMI\n")){
     strcpy((char *)msg, "You are: ");
     if(users[usrIndex].name != NULL){
       strcat((char *)msg, users[usrIndex].name);
@@ -132,7 +147,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
     return 0;
   }
   
-  if(!strcmp(newMsg, "ONLINES\n")){
+  else if(!strcmp(newMsg, "ONLINES\n")){
     int i;
     strcpy((char *)msg, "Users Online:\n");
     for(i=1;i<=nConns+1;i++){
@@ -145,7 +160,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
     return 0;
   }
 
-  if(!strcmp(newMsg, "LOGOUT\n") || !strcmp(newMsg, "QUIT\n")){
+  else if(!strcmp(newMsg, "LOGOUT\n") || !strcmp(newMsg, "QUIT\n")){
     printf("Removing user %s\n", (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name);
     strcpy((char *)msg, (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name);
     strcat((char *)msg, " is offline");
