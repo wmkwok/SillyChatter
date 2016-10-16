@@ -147,7 +147,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
     return 0;
   }
   
-  else if(!strcmp(newMsg, "ONLINES\n")){
+  else if(!strcmp(newMsg, "LIST\n")){
     int i;
     strcpy((char *)msg, "Users Online:\n");
     for(i=1;i<=nConns+1;i++){
@@ -214,14 +214,12 @@ int MsgHandle(BYTE * msg, int usrIndex){
     
     //receive send public message request
     else if(!strcmp(token, "SEND")){
-      if(users[usrIndex].name != NULL){
-	//printf("%s said: %s\n", users[usrIndex].name, newMsg);
-	strcpy((char *)msg, users[usrIndex].name);
-	strcat((char *)msg, " said: ");
-	strcat((char *)msg, newMsg);
-	free(begin);
-	return 0;
-      }
+      //printf("%s said: %s\n", users[usrIndex].name, newMsg);
+      strcpy((char *)msg, (users[usrIndex].name==NULL)? users[usrIndex].addr:users[usrIndex].name);
+      strcat((char *)msg, " said: ");
+      strcat((char *)msg, newMsg);
+      free(begin);
+      return 0;
     }
       //receive send public message request
       else if(!strcmp(token, "PSEND")){
@@ -263,8 +261,6 @@ int MsgHandle(BYTE * msg, int usrIndex){
   }
   return 0;
 }
-
-
 
 //recieves something from file descriptor(socket), nonblocking.
 //Takes extra usrIndex integer as used in peers and connStat, needed for knowing who sent it to server
@@ -334,7 +330,7 @@ void DoServer(int svrPort, int maxConcurrency) {
   
   //setup for peers for the listener
   nConns = 0;
-  memset(peers, 0, sizeof(peers));
+  memset(peers, -1, sizeof(peers));
   peers[0].fd = listenFD;
   peers[0].events = POLLRDNORM;
   memset(connStat, 0, sizeof(connStat));
