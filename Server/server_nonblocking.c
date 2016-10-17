@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <poll.h>
+#include <time.h>
 #include "registration.h"
 
 //just redefining sizes in better names...
@@ -69,6 +70,25 @@ void Log(const char * format, ...) {
   fprintf(stderr, "%s\n", msg);
 }
 
+void logStat(const char * format, ...){
+  char msg[2048];
+  FILE * fp;
+  time_t ltime; /* calendar time */
+  ltime=time(NULL); /* get current cal time */
+  va_list argptr;
+  va_start(argptr, format);
+  vsprintf(msg, format, argptr);
+  fp = fopen("log.txt", "a+");
+  if(fp != NULL){
+    fputs(msg, fp);
+    fputs("TIME:", fp);
+      fputs(asctime(localtime(&ltime)), fp);
+    fputs("\n", fp);
+    fclose(fp);
+  }
+  va_end(argptr);
+}
+
 /****************************************Communication functions*************************************/
 
 //Sends something to target file descriptor(socket), nonblocking.
@@ -83,7 +103,6 @@ int Send_NonBlocking(int sockFD, const BYTE * data, int len, struct CONN_STAT * 
       close(sockFD);
       return -1;
     } else if (n < 0 && (errno == EWOULDBLOCK)) {
-      printf("EWOULDBLOCK\n");
       pPeer->events |= POLLWRNORM;
       return 0;
     } else {
@@ -108,7 +127,7 @@ void RemoveConnection(int i) {
 //after recv reads msg it is picked apart and
 //executed by MsgHandle.
 int MsgHandle(BYTE * msg, int usrIndex){
-  printf("%s: %s\n",users[usrIndex].addr, msg);
+  logStat("%s: %s\n",users[usrIndex].addr, msg);
   char * token;
   char * newMsg = malloc(strlen((char *)msg)+1);
   char * begin = newMsg;
@@ -124,7 +143,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
     strcat((char *)msg, "LOGOUT: closes the connection and your client\n");
     pmsg = 1;
     Send_NonBlocking(peers[usrIndex].fd, msg, strlen((char*)msg), &connStat[usrIndex], &peers[usrIndex]);
-    printf("SENT to %s: %s\n", (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name, (char*)msg);
+    logStat("SENT to %s: %s\n", (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name, (char*)msg);
     free(begin);
     return 0;
   }  
@@ -142,7 +161,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
     }
     pmsg = 1;
     Send_NonBlocking(peers[usrIndex].fd, msg, strlen((char*)msg), &connStat[usrIndex], &peers[usrIndex]);
-    printf("SENT to %s: %s\n", (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name, (char*)msg);
+    logStat("SENT to %s: %s\n", (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name, (char*)msg);
     free(begin);
     return 0;
   }
@@ -161,7 +180,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
   }
 
   else if(!strcmp(newMsg, "LOGOUT\n") || !strcmp(newMsg, "QUIT\n")){
-    printf("Removing user %s\n", (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name);
+    logStat("Removing user %s\n", (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name);
     strcpy((char *)msg, (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name);
     strcat((char *)msg, " is offline");
     RemoveConnection(usrIndex);
@@ -180,11 +199,11 @@ int MsgHandle(BYTE * msg, int usrIndex){
 	return 1;
       }
       else{
-	printf("REGISTER failed.");
+	logStat("REGISTER failed.");
 	strcpy((char*)msg, "Registration failed! Make sure you aren't already logged on.\n");
 	pmsg = 1;
 	Send_NonBlocking(peers[usrIndex].fd, msg, strlen((char*)msg), &connStat[usrIndex], &peers[usrIndex]);
-	printf("SENT to %s: %s\n", (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name, (char*)msg);
+	logStat("SENT to %s: %s\n", (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name, (char*)msg);
 	free(begin);
 	return 0;
       }
@@ -214,7 +233,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
     
     //receive send public message request
     else if(!strcmp(token, "SEND")){
-      //printf("%s said: %s\n", users[usrIndex].name, newMsg);
+      //logStat("%s said: %s\n", users[usrIndex].name, newMsg);
       strcpy((char *)msg, (users[usrIndex].name==NULL)? users[usrIndex].addr:users[usrIndex].name);
       strcat((char *)msg, " said: ");
       strcat((char *)msg, newMsg);
@@ -236,16 +255,16 @@ int MsgHandle(BYTE * msg, int usrIndex){
 	      found = 1;
 	      pmsg = 1;
 	      Send_NonBlocking(peers[i].fd, msg, strlen((char*)msg), &connStat[i], &peers[i]);
-	      printf("SENT to %s: %s\n", (users[i].name == NULL)? users[i].addr:users[i].name, (char*)msg);
+	      logStat("SENT to %s: %s\n", (users[i].name == NULL)? users[i].addr:users[i].name, (char*)msg);
 	      break;
 	    }
 	  }
 	  if(!found){
-	    printf("PSEND failed: user %s not found\n", token);
+	    logStat("PSEND failed: user %s not found\n", token);
 	    pmsg = 1;
 	    strcpy((char *)msg, "PSEND user not found online\n");
 	    Send_NonBlocking(peers[usrIndex].fd, msg, strlen((char*)msg), &connStat[usrIndex], &peers[usrIndex]);
-	    printf("SENT to %s: %s\n", (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name, (char*)msg);
+	    logStat("SENT to %s: %s\n", (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name, (char*)msg);
 	  }
 	}
 	free(begin);
@@ -275,13 +294,13 @@ int Recv_NonBlocking(int sockFD, BYTE * data, int len, struct CONN_STAT * pStat,
       close(sockFD);
       return -1;
     } else if (n < 0 && (errno == EWOULDBLOCK)) { //assuming all done
-      //printf("received something: %s\n", data);
+      //logStat("received something: %s\n", data);
       return (MsgHandle(data, usrIndex));
     } else {
       Error("Unexpected recv error %d: %s.", errno, strerror(errno));
     }
   }
-  //  printf("received something: %s\n", data);
+  //  logStat("received something: %s\n", data);
   return 0;
 }
 
@@ -362,7 +381,7 @@ void DoServer(int svrPort, int maxConcurrency) {
 	if(inet_ntop(AF_INET, &(clientAddr.sin_addr), users[nConns].addr, clientAddrLen) == NULL){
 	  Log("address is returned as NULL\n");
 	}
-	printf("Address connection %d: %s %s\n", nConns, users[nConns].addr, users[nConns].name);
+	logStat("Address connection %d: %s %s\n", nConns, users[nConns].addr, users[nConns].name);
 	memset(&connStat[nConns], 0, sizeof(struct CONN_STAT));
       }
       //if nothing go on
@@ -388,7 +407,7 @@ void DoServer(int svrPort, int maxConcurrency) {
 		  goto NEXT_CONNECTION;
 		}
 		else{
-		  printf("SENT to %s: %s\n", (users[onlines].name == NULL)? users[onlines].addr:users[onlines].name, (char*)msg);
+		  logStat("SENT to %s: %s\n", (users[onlines].name == NULL)? users[onlines].addr:users[onlines].name, (char*)msg);
 		}
 	      }
 	    }
@@ -426,7 +445,7 @@ int main(int argc, char * * argv) {
   int port = atoi(argv[1]);
   int maxConcurrency = atoi(argv[2]);
   //call DoServer
-  printf("Waiting for connections...\n");
+  logStat("Waiting for connections...\n");
   DoServer(port, maxConcurrency);
   
   return 0;
