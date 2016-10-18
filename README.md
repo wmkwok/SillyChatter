@@ -2,7 +2,7 @@
 Something along the lines of a super unsafe and crashy chat server >_&lt;
 ###How to run
 - For client, type **make** and then **./client**
-- For server, type **make** and then **./server_nonblocking 7295 16**
+- For server, type **make** and then **./server 7295 16**
 - the port number must be 7295, as that is what the client is set to connect with.
 - the concurrency number can be changed as preferred.
 
@@ -52,7 +52,7 @@ Server will send a list of all online clients here, not including anonymous user
 ####server.c
 - **int MsgHandle(char * msg, int usrIndex):** Takes in a msg and the index of the client that send the msg, pulls it apart and executes it. Doesn't really need to return anything really.
 
-####server_registration.c
+####registration.c
 - **int REGISTER(char * registration):** takes in the registration info and just sticks it into a file.
 - **int LOGIN(char* login):** takes in login user and pass, attempts to find in registered list, and returns whether logged on or not.
 
