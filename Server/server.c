@@ -127,7 +127,7 @@ void RemoveConnection(int i) {
 //after recv reads msg it is picked apart and
 //executed by MsgHandle.
 int MsgHandle(BYTE * msg, int usrIndex){
-  logStat("%s: %s\n",users[usrIndex].addr, msg);
+  logStat("%s: %s",users[usrIndex].name == NULL ? users[usrIndex].addr: users[usrIndex].name, msg);
   char * token;
   char * newMsg = malloc(strlen((char *)msg)+1);
   char * begin = newMsg;
