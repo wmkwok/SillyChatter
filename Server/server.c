@@ -193,6 +193,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
       if(REGISTER(newMsg)){
 	users[usrIndex].name = (char *)malloc(strstr(newMsg, " ") - newMsg); 
 	strcpy(users[usrIndex].name, strsep(&newMsg, " "));
+	logStat("LOGIN success with user %s.",users[usrIndex].name );
 	strcpy((char *)msg, users[usrIndex].name);
 	strcat((char *)msg, " is online");
 	free(begin);
