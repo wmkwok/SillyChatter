@@ -231,6 +231,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
       }
       else{
 	strcpy((char*)msg, "LOGIN failed\n");
+	logStat("LOGIN failed for address at %s.", users[usrIndex].addr);
       }
       free(begin);
       return 0;
