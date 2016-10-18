@@ -225,6 +225,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
 	}
 	users[usrIndex].name = (char *)malloc(strlen(name)); 
 	strcpy(users[usrIndex].name, name);
+	logStat("LOGIN success for user %s.", users[usrIndex].name);
 	strcpy((char *)msg, users[usrIndex].name);
 	strcat((char *)msg, " is online");
       }
