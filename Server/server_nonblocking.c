@@ -180,7 +180,7 @@ int MsgHandle(BYTE * msg, int usrIndex){
   }
 
   else if(!strcmp(newMsg, "LOGOUT\n") || !strcmp(newMsg, "QUIT\n")){
-    logStat("Removing user %s\n", (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name);
+    logStat("Removing user %s from connections\n", (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name);
     strcpy((char *)msg, (users[usrIndex].name == NULL)? users[usrIndex].addr:users[usrIndex].name);
     strcat((char *)msg, " is offline");
     RemoveConnection(usrIndex);

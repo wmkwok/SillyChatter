@@ -2,43 +2,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-int VALID_USER(char * username){
-  return 1;
-  FILE *fp;
-  char user[10];
-  int len = strlen(username);
-  fp = fopen("user.txt", "r");
-  if(fp == NULL) return 1;
-  while(fp != NULL && fgets(user, len, (FILE *)fp) != NULL){
-    if(!strcmp(user, username)){
-      fclose(fp);
-      return 0;
-    }
-  }
-  fclose(fp);
-  return 1;
-}
-
 //takes username and pass and records into file
 int REGISTER(char *registration){
   char * pass = malloc(strlen(registration)+1);
   char * begin = pass;
-  char * username;
   strcpy(pass, registration);
-  username = strsep(&pass, " ");
-  if(VALID_USER(username)){
-    FILE *fp;
-    fp = fopen("user.txt", "a+");
-    fputs(registration, fp);
-    fputs("\n", fp);
-    fclose(fp);
-  }
-  else{
-    free(begin);
-    printf("REGISTER: %s failed\n", registration);
-    return 0;
-   }
+  FILE *fp;
+  fp = fopen("user.txt", "a+");
+  fputs(registration, fp);
+  fputs("\n", fp);
+  fclose(fp);
+ 
   free(begin);
   printf("REGISTER: %s succeeded\n", registration);
   return 1;
