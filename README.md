@@ -1,5 +1,15 @@
 # SillyChatter
 Something along the lines of a super unsafe and crashy chat server >_&lt;
+###How to run
+- For client, type **make** and then **./client**
+- For server, type **make** and then **./server_nonblocking 7295 16**
+- the port number must be 7295, as that is what the client is set to connect with.
+- the concurrency number can be changed as preferred.
+
+###Known problems
+- Registering doesn't check for validity of usernames
+- Something is causing any client besides the first to connect, to block, or not having the sent messages being recv'ed by the server until the first client sends something.
+
 ###Registration
 The user will not be allowed to send any messages until login or registration is done. 
 - **Registering:** Client will send register msg to server. Server will add it to a list of registered users. Upon sucessful registration users will be automatically logged in.
