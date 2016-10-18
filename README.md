@@ -1,5 +1,6 @@
 # SillyChatter
 Something along the lines of a super unsafe and crashy chat server >_&lt;
+####https://github.com/wmkwok/SillyChatter
 ###How to run
 - For client, type **make** and then **./client**
 - For server, type **make** and then **./server 7295 16**
