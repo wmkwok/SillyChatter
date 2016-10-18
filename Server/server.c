@@ -227,6 +227,9 @@ int MsgHandle(BYTE * msg, int usrIndex){
 	strcpy((char *)msg, users[usrIndex].name);
 	strcat((char *)msg, " is online");
       }
+      else{
+	strcpy((char*)msg, "LOGIN failed\n");
+      }
       free(begin);
       return 0;
     }

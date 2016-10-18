@@ -2,10 +2,10 @@ CC = gcc
 CFLAGS = -g -Wall
 LDFLAGS = -g 
 
-all: server_nonblocking
+all: server
 
-server_nonblocking: server_nonblocking.o registration.o
-	$(CC) $(LDFLAGS) -o server_nonblocking server_nonblocking.o registration.o
+server: server.o registration.o
+	$(CC) $(LDFLAGS) -o server server.o registration.o
 
 registration.o: registration.c
 	$(CC) $(CFLAGS) -c registration.c
@@ -14,4 +14,4 @@ registration.o: registration.c
 	$(CC) $(CFLAGS) -c $<
 
 clean:
-	rm -f *~ *.o *# *.txt server_nonblocking
+	rm -f *~ *.o *# *.txt server
