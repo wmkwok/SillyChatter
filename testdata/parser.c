@@ -106,42 +106,32 @@ void t1(){
 
   //read through all pcap files
   while(fread(&recHdr, 1, sizeof(recHdr), stdin) > 0){
-    numPkt++;
-    printf("packet no.: %i \ntimestamp: %i:%i \nincLen: %i \norigLen: %i \n", ++numPkt, recHdr.sec, recHdr.usec, recHdr.inclLen, recHdr.origLen);
+    //printf("packet no.: %i \ntimestamp: %i:%i \nincLen: %i \norigLen: %i \n", numPkt, recHdr.sec, recHdr.usec, recHdr.inclLen, recHdr.origLen);
     fseek(stdin, 14, SEEK_CUR); //seek past ethernet layer
-    
     fread(&buf, 1, sizeof(struct pkt), stdin);
     extract_header((uint32_t *)&buf, &p);
 
+
     /*--------------------------------------showing IP Hdr-----------------------------------------*/
-    printf("Packet no: %i\n", numPkt);
-    printf("Version: %x\n", p.version);
-    printf("ihl: %x\n", p.ihl);
-    printf("dscp:0x%x\n", p.dscp);
-    printf("ecn: %x\n", p.ecn);
-    printf("totalLen: %i\n", p.totalLen);
-    printf("identification: 0x%x\n", p.identification);
-    printf("flags: 0x%x\n", p.flags);
-    printf("fragOffset: %i\n", p.fragOffset);
-    printf("timeToLive: %i\n", p.timeToLive);
-    printf("protocol: %i\n", p.protocol);
-    printf("checksum: 0x%x\n", p.checksum);
-    printf("source: 0x%x\n", p.sourceAddr);
-    printf("dest: 0x%x\n\n", p.destAddr);
+    /* printf("Packet no: %i\n", numPkt); */
+    /* printf("Version: %x\n", p.version); */
+    /* printf("ihl: %x\n", p.ihl); */
+    /* printf("dscp:0x%x\n", p.dscp); */
+    /* printf("ecn: %x\n", p.ecn); */
+    /* printf("totalLen: %i\n", p.totalLen); */
+    /* printf("identification: 0x%x\n", p.identification); */
+    /* printf("flags: 0x%x\n", p.flags); */
+    /* printf("fragOffset: %i\n", p.fragOffset); */
+    /* printf("timeToLive: %i\n", p.timeToLive); */
+    /* printf("protocol: %i\n", p.protocol); */
+    /* printf("checksum: 0x%x\n", p.checksum); */
+    /* printf("source: 0x%x\n", p.sourceAddr); */
+    /* printf("dest: 0x%x\n\n", p.destAddr); */
     /*-------------------------------------------------------------------------------------*/
 
-    //check for options and seek past it
-    int opt = (p.ihl-5)*4;
-    if(p.ihl > 5){
-      fseek(stdin, (long)opt, SEEK_CUR);
-    }
-
-    if(p.version != 4){
-      printf("Unrecognized pkt version number %d: \n", p.version);
-    }
-
+    numPkt++;    
     //only care if it is ipv4 packet
-    if(p.version == 4){
+    if(p.version == 0x04){
       numIP++;
       //TCP
       if(p.protocol == 0x06)
@@ -151,8 +141,28 @@ void t1(){
     	numUDP++;
     }
     
-    //seek through the rest of the packet for now?
-    fseek(stdin, (long)recHdr.inclLen - 14 - sizeof(struct pkt) - opt, SEEK_CUR); 
+    if(p.version != 0x04){
+      printf("Unrecognized pkt version number %d: \n", p.version);
+      //seek through the rest of the packet for now?
+      fseek(stdin, (long)recHdr.inclLen - 14 - sizeof(struct pkt), SEEK_CUR); 
+    }
+
+    else if(p.version == 0x04){
+      //check for options and seek past it
+      int opt = (p.ihl-5)*4;
+      if(p.ihl > 5){
+	fseek(stdin, (long)opt, SEEK_CUR);
+      }
+
+      if(p.protocol == 0x06){
+	
+      }
+      else if(p.protocol == 0x11){
+
+      }
+      //seek through the rest of the packet for now?
+      fseek(stdin, (long)recHdr.inclLen - 14 - sizeof(struct pkt) - opt, SEEK_CUR);       
+    }
   }
   printf("size of p %i \n", sizeof(p));
   printf("Total Packets: %i \nTotal IP Packets: %i\nTotal TCP: %i\nTotal UDP: %i\n", numPkt, numIP, numTCP, numUDP);
