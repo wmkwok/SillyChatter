@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
-#include "hash.h"
 #include "structures.h"
+
+#define MAX_CONN_SIZE 1024
 
 void ntoh(uint32_t * ptr, size_t byte){
   uint32_t word;
@@ -51,20 +52,23 @@ void t1(){
   struct ethHdr eHdr;
   struct pkt buf;
   struct pkt p;
+  struct tcpHdr tHdr;
+  struct tcpConn tcpConns[MAX_CONN_SIZE];
   uint8_t ihlLen;
   uint32_t word;
 
-  //read the global header of PCAP file
+  /**************************************global headers*****************************************/
   printf("Read status: %i\n", fread(&gblHdr, 1, sizeof(gblHdr),  stdin));
-  printf("feof return status: %i \n", feof(stdin));
-  printf("Global Header: \n");
-  printf("Magic Number: %x \n", gblHdr.magicNumber);
-  printf("Version Major: %i \n", gblHdr.versionMajor);
-  printf("Version Minor: %i \n", gblHdr.versionMinor);
-  printf("thisZone: %i \n", gblHdr.thisZone);
-  printf("sigFigs: %i\n", gblHdr.sigFigs);
-  printf("snapLen: %i\n", gblHdr.snapLen);
-  printf("network %i\n", gblHdr.network);
+  /* printf("feof return status: %i \n", feof(stdin)); */
+  /* printf("Global Header: \n"); */
+  /* printf("Magic Number: %x \n", gblHdr.magicNumber); */
+  /* printf("Version Major: %i \n", gblHdr.versionMajor); */
+  /* printf("Version Minor: %i \n", gblHdr.versionMinor); */
+  /* printf("thisZone: %i \n", gblHdr.thisZone); */
+  /* printf("sigFigs: %i\n", gblHdr.sigFigs); */
+  /* printf("snapLen: %i\n", gblHdr.snapLen); */
+  /* printf("network %i\n", gblHdr.network); */
+  /**********************************************************************************************/
 
   //read through all pcap files
   while(fread(&recHdr, 1, sizeof(recHdr), stdin) > 0){
@@ -78,7 +82,7 @@ void t1(){
     extract_header((uint32_t *)&buf, &p); //call function that converts the numbers
 
     /*--------------------------------------showing ETH/IP Hdr-----------------------------------------*/
-    printf("Ethernet Frame type: %x\n", eHdr.type);
+    /* printf("Ethernet Frame type: %x\n", eHdr.type); */
     /* printf("Packet no: %i\n", numPkt); */
     /* printf("Version: %x\n", p.version); */
     /* printf("ihl: %x\n", p.ihl); */
@@ -108,7 +112,7 @@ void t1(){
       }
     
     if(p.version != 4){
-      printf("Unrecognized pkt version number %d at %d,%d: \n", p.version, recHdr.sec, recHdr.usec);
+      //printf("Unrecognized pkt version number %d at %d,%d: \n", p.version, recHdr.sec, recHdr.usec);
       //seek through the rest of the packet for now?
       fseek(stdin, (long)recHdr.inclLen - 14 - sizeof(struct pkt), SEEK_CUR); 
     }
@@ -116,18 +120,30 @@ void t1(){
     else if(p.version == 4){
       //check for options and seek past it
       int opt = (p.ihl-5)*4;
-      /* if(opt > 0){ */
-      /* 	fseek(stdin, (long)opt, SEEK_CUR); */
-      /* } */
+      fseek(stdin, opt, SEEK_CUR);
 
       if(p.protocol == 6){ //TCP packet
+	read(&tHdr, 1, sizeof(struct tcpHdr), stdin); //read to tcp header
+	
+	/**************************print TCP header**************************************************/
+	printf("packet no.: %i \ntimestamp: %i:%i \nincLen: %i \norigLen: %i \n", numPkt, recHdr.sec, recHdr.usec, recHdr.inclLen, recHdr.origLen);
+
+	printf("TCP src port: %x\n", ntohs(tHdr.srcPrt));
+	printf("TCP dest port: %x\n", ntohs(tHdr.destPrt));
+	printf("TCP seq num: %x\n", ntohs(tHdr.seq));
+	printf("TCP ack num: %x\n", ntohs(tHdr.ack));
+	printf("TCP offset: %x, reserved: %x, flags: %x\n", tHdr.offset, tHdr.reserved, tHdr.flags);
+	printf("TCP winSize: %x\n", ntohs(tHdr.winSize));
+	printf("TCP checksum: %x\n", ntohs(tHdr.checksum));
+	printf("TCP urgPtr: %x\n", ntohs(tHdr.urgPtr));
+	/*******************************************************************************************/
 	
       }
       else if(p.protocol == 17){ //UDP packet. SEEK past it?
-	
+	//maybe ignore and seek past it all together afterwards...
       }
       //seek through the rest of the packet for now?
-      fseek(stdin, (long)recHdr.inclLen - 14 - sizeof(struct pkt), SEEK_CUR);       
+      fseek(stdin, (long)recHdr.inclLen - 14 - sizeof(struct pkt) - opt -  (p.version == 6? sizeof(struct tcpHdr): 0), SEEK_CUR);       
     }
       }
   printf("size of p %i \n", sizeof(p));
