@@ -1,47 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "hash.h"
-
-//https://www.codingunit.com/c-tutorial-binary-file-io
-struct pcapHdr{
-  uint32_t magicNumber;
-  uint16_t versionMajor;
-  uint16_t versionMinor;
-  int32_t thisZone;
-  uint32_t sigFigs;
-  uint32_t snapLen;
-  uint32_t network;
-};
-
-struct pktHdr{
-  uint32_t sec;
-  uint32_t usec;
-  uint32_t inclLen;
-  uint32_t origLen;
-};
-
-struct pkt
-{
-  uint32_t version:4, ihl:4, dscp:6, ecn:2, totalLen:16;
-  uint32_t identification:16, flags:3, fragOffset:13;
-  uint32_t timeToLive:8, protocol:8, checksum:16;
-  uint32_t sourceAddr;
-  uint32_t destAddr;
-  /* uint32_t opt1; */
-  /* uint32_t opt2; */
-  /* uint32_t opt3; */
-  /* uint32_t opt4; */
-};
-
-struct tcpHdr{
-  uint32_t sourcePrt:16, destPrt:16;
-  uint32_t seq;
-  uint32_t ack;
-  uint16_t offset:4, reserved:3, flags:9;
-  uint16_t winSize;
-  uint16_t checksum;
-  uint16_t urgPtr;
-};
+#include "structures.h"
 
 void ntoh(uint32_t * ptr, size_t byte){
   uint32_t word;
@@ -79,6 +39,7 @@ void extract_header(uint32_t * ptr, struct pkt *p){
   p->destAddr = word;
 
 }
+
 void t1(){
   int numPkt = 0; //number of packets traced
   int numIP = 0; //number of IP packets
@@ -87,6 +48,7 @@ void t1(){
   int conns = 0; //number of unique TCP connections
   struct pcapHdr gblHdr;
   struct pktHdr recHdr;
+  struct ethHdr eHdr;
   struct pkt buf;
   struct pkt p;
   uint8_t ihlLen;
@@ -107,12 +69,16 @@ void t1(){
   //read through all pcap files
   while(fread(&recHdr, 1, sizeof(recHdr), stdin) > 0){
     //printf("packet no.: %i \ntimestamp: %i:%i \nincLen: %i \norigLen: %i \n", numPkt, recHdr.sec, recHdr.usec, recHdr.inclLen, recHdr.origLen);
-    fseek(stdin, 14, SEEK_CUR); //seek past ethernet layer
-    fread(&buf, 1, sizeof(struct pkt), stdin);
-    extract_header((uint32_t *)&buf, &p);
 
+    fseek(stdin, 12, SEEK_CUR); //seek past the dest and src
+    fread(&eHdr, 1, 2, stdin); //read in the type
+    eHdr.type = ntohs(eHdr.type); //convert the number
 
-    /*--------------------------------------showing IP Hdr-----------------------------------------*/
+    fread(&buf, 1, sizeof(struct pkt), stdin); //read pkt header
+    extract_header((uint32_t *)&buf, &p); //call function that converts the numbers
+
+    /*--------------------------------------showing ETH/IP Hdr-----------------------------------------*/
+    printf("Ethernet Frame type: %x\n", eHdr.type);
     /* printf("Packet no: %i\n", numPkt); */
     /* printf("Version: %x\n", p.version); */
     /* printf("ihl: %x\n", p.ihl); */
@@ -129,41 +95,41 @@ void t1(){
     /* printf("dest: 0x%x\n\n", p.destAddr); */
     /*-------------------------------------------------------------------------------------*/
 
-    numPkt++;    
+    numPkt++;
     //only care if it is ipv4 packet
-    if(p.version == 0x04){
+    if(p.version == 4 && eHdr.type == 2048){
       numIP++;
       //TCP
-      if(p.protocol == 0x06)
+      if(p.protocol == 6)
     	numTCP++;
       //UDP
-      if(p.protocol == 0x11)
+      if(p.protocol == 17)
     	numUDP++;
-    }
+      }
     
-    if(p.version != 0x04){
-      printf("Unrecognized pkt version number %d: \n", p.version);
+    if(p.version != 4){
+      printf("Unrecognized pkt version number %d at %d,%d: \n", p.version, recHdr.sec, recHdr.usec);
       //seek through the rest of the packet for now?
       fseek(stdin, (long)recHdr.inclLen - 14 - sizeof(struct pkt), SEEK_CUR); 
     }
 
-    else if(p.version == 0x04){
+    else if(p.version == 4){
       //check for options and seek past it
       int opt = (p.ihl-5)*4;
-      if(p.ihl > 5){
-	fseek(stdin, (long)opt, SEEK_CUR);
-      }
+      /* if(opt > 0){ */
+      /* 	fseek(stdin, (long)opt, SEEK_CUR); */
+      /* } */
 
-      if(p.protocol == 0x06){
+      if(p.protocol == 6){ //TCP packet
 	
       }
-      else if(p.protocol == 0x11){
-
+      else if(p.protocol == 17){ //UDP packet. SEEK past it?
+	
       }
       //seek through the rest of the packet for now?
-      fseek(stdin, (long)recHdr.inclLen - 14 - sizeof(struct pkt) - opt, SEEK_CUR);       
+      fseek(stdin, (long)recHdr.inclLen - 14 - sizeof(struct pkt), SEEK_CUR);       
     }
-  }
+      }
   printf("size of p %i \n", sizeof(p));
   printf("Total Packets: %i \nTotal IP Packets: %i\nTotal TCP: %i\nTotal UDP: %i\n", numPkt, numIP, numTCP, numUDP);
 }

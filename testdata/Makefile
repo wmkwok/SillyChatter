@@ -7,7 +7,7 @@ all: clean parser
 parser: parser.o 
 	$(CC) $(LDFLAGS) -o $@ $^
 
-%.o: %.c
+parser.o: parser.c structures.h
 	$(CC) $(CFLAGS) -c $<
 
 clean:
