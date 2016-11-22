@@ -44,9 +44,24 @@ struct tcpHdr{
   uint16_t urgPtr;
 };
 
-struct tcpConn{
+//tcp connection info, direction of information is important
+struct tcpConn{ 
   uint32_t srcIP;
   uint32_t destIP;
   uint32_t srcPort;
   uint32_t destPort;
+};
+
+//a node of a part of one connection
+struct tcpSeg{
+  uint32_t seq;
+  uint8_t * data;
+  struct tcpSeg * prev;
+  struct tcpSeg * next;
+};
+
+//the whole entire linked list of tcp datas, with the connection info structure
+struct tcpGroup{
+  struct tcpConn conn;
+  struct tcpSeg * head;
 };
