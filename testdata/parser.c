@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include "structures.h"
 
 #define MAX_CONN_SIZE 1024
@@ -53,6 +54,7 @@ void t1(){
   struct pkt buf;
   struct pkt p;
   struct tcpHdr tHdr;
+  struct tcpHdr tcpp;
   struct tcpConn tcpConns[MAX_CONN_SIZE];
   uint8_t ihlLen;
   uint32_t word;
@@ -124,7 +126,7 @@ void t1(){
 
       if(p.protocol == 6){ //TCP packet
 	read(&tHdr, 1, sizeof(struct tcpHdr), stdin); //read to tcp header
-	
+	load_tcp_hdr((uint32_t *)&tHdr, &tcpp);
 	/**************************print TCP header**************************************************/
 	printf("packet no.: %i \ntimestamp: %i:%i \nincLen: %i \norigLen: %i \n", numPkt, recHdr.sec, recHdr.usec, recHdr.inclLen, recHdr.origLen);
 
@@ -148,6 +150,28 @@ void t1(){
       }
   printf("size of p %i \n", sizeof(p));
   printf("Total Packets: %i \nTotal IP Packets: %i\nTotal TCP: %i\nTotal UDP: %i\n", numPkt, numIP, numTCP, numUDP);
+}
+
+int load_tcp_hdr(uint32_t *buf, struct tcpHdr *hdr) {
+
+  if (buf != NULL) {
+    memcpy(hdr, buf, sizeof(struct tcpHdr));
+  }
+
+  hdr->srcPrt = ntohs(hdr->srcPrt);
+  hdr->destPrt = ntohs(hdr->destPrt);
+  hdr->seq = ntohl(hdr->seq);
+  hdr->ack = ntohl(hdr->ack);
+  /* data_offset (4 bits) is unchanged
+   * reserved (3 bits) is unchanged
+   * flags (9 bits) TODO
+   */
+  
+  hdr->winSize = ntohs(hdr->winSize);
+  hdr->checksum = ntohs(hdr->checksum);
+  hdr->urgPtr = ntohs(hdr->urgPtr);
+
+  return 0;
 }
 
 void t2(){
