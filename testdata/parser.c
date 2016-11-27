@@ -5,13 +5,12 @@
 #include <arpa/inet.h>
 #include "structures.h"
 
-#define MAX_CONN_SIZE 1024
 
 void ntoh(uint32_t * ptr, size_t byte);
 void extract_header(uint32_t * ptr, struct pkt * p);
 void t1(void);
 int load_tcp_hdr(uint32_t *buf, struct tcpHdr *hdr);
-void check_conn(struct tcpHdr * tcp, struct pkt * p, int conns, struct tcpConn tcpConns[]);
+int insert_conn(struct tcpConn newConn);
 void find_conn(struct tcpConn * conn);
 void insert_node(uint32_t seq, uint8_t * data, struct tcpGroup * grp);
 void read_tcp(struct tcpGroup * group);
@@ -55,21 +54,22 @@ void extract_header(uint32_t * ptr, struct pkt *p){
 }
 
 void t1(){
-  int numPkt = 0; //number of packets traced
-  int numIP = 0; //number of IP packets
-  int numTCP = 0; //number of TCP packets
-  int numUDP = 0; //number of UDP packets
-  int conns = 0; //number of unique TCP connections
-  struct pcapHdr gblHdr;
-  struct pktHdr recHdr;
-  struct ethHdr eHdr;
-  struct pkt buf;
-  struct pkt p;
-  struct tcpHdr tHdr;
-  struct tcpHdr tcpp;
-  struct tcpConn tcpConns[MAX_CONN_SIZE];
-  uint8_t ihlLen;
-  uint32_t word;
+  /* int numPkt = 0; //number of packets traced */
+  /* int numIP = 0; //number of IP packets */
+  /* int numTCP = 0; //number of TCP packets */
+  /* int numUDP = 0; //number of UDP packets */
+  /* int conns = 0; //number of unique TCP connections */
+  /* struct pcapHdr gblHdr; */
+  /* struct pktHdr recHdr; */
+  /* struct ethHdr eHdr; */
+  /* struct pkt buf; */
+  /* struct pkt p; */
+  /* struct tcpHdr tHdr; */
+  /* struct tcpHdr tcpp; */
+  /* struct tcpConn tcpConns[MAX_CONN_SIZE]; */
+  /* struct tcpConn newConn; */
+  /* uint8_t ihlLen; */
+  /* uint32_t word; */
 
   /**************************************global headers*****************************************/
   printf("Read status: %i\n", fread(&gblHdr, 1, sizeof(gblHdr),  stdin));
@@ -144,6 +144,14 @@ void t1(){
 	  printf("TCP urgPtr: %x\n", ntohs(tHdr.urgPtr));
 	  /*******************************************************************************************/
 	  load_tcp_hdr((uint32_t *)&tcpp, &tHdr);
+	  
+	  newConn = (struct tcpConn){
+	    .srcIP = p.sourceAddr,
+	    .destIP = p.destAddr,
+	    .srcPort = tHdr.srcPrt,
+	    .destPort = tHdr.destPrt
+	  };
+	  insert_conn(newConn);
 	}
 	else if(p.protocol == 17){ //UDP packet. SEEK past it?
 	  //maybe ignore and seek past it all together afterwards...
@@ -160,7 +168,7 @@ void t1(){
     }
   }
   printf("size of p %i \n", sizeof(p));
-  printf("Total Packets: %i \nTotal IP Packets: %i\nTotal TCP: %i\nTotal UDP: %i\n", numPkt, numIP, numTCP, numUDP);
+  printf("Total Packets: %i \nTotal IP Packets: %i\nTotal TCP: %i\nTotal UDP: %i\nTCP conns: %i\n", numPkt, numIP, numTCP, numUDP, conns);
 }
 
 /**********************************untested tcp functions******************************/
@@ -178,32 +186,28 @@ int load_tcp_hdr(uint32_t * buf, struct tcpHdr *hdr) {
 }
 
 //check/add connections when you find them
-void check_conn(struct tcpHdr * tcp, struct pkt * p, int conns, struct tcpConn tcpConns[]){
+int insert_conn(struct tcpConn newConn){
   int i;
   for(i=0; i < conns; i++){
-    if(tcpConns[i].srcPort == tcp->srcPrt && 
-       tcpConns[i].destPort == tcp->destPrt &&
-       tcpConns[i].srcIP == p->sourceAddr &&
-       tcpConns[i].destIP == p->destAddr){
-      printf("found conn");
+    if(tcpConns[i].srcPort == newConn.srcPort && 
+       tcpConns[i].destPort == newConn.destPort &&
+       tcpConns[i].srcIP == newConn.srcIP &&
+       tcpConns[i].destIP == newConn.destIP){
+      return 0;
     }
 
-    else if(tcpConns[i].srcPort == tcp->destPrt && 
-       tcpConns[i].destPort == tcp->srcPrt &&
-       tcpConns[i].srcIP == p->destAddr &&
-       tcpConns[i].destIP == p->sourceAddr){
-      printf("found conn");
-    }
-
-    else{
-      printf("add new connection in array");
-      tcpConns[conns].srcPort = tcp->srcPrt;
-      tcpConns[conns].destPort = tcp->destPrt;
-      tcpConns[conns].srcIP = p->sourceAddr;
-      tcpConns[conns].destIP = p->destAddr;
-      conns++;
+    else if(tcpConns[i].srcPort == newConn.destPort && 
+	    tcpConns[i].destPort == newConn.srcPort &&
+	    tcpConns[i].srcIP == newConn.destIP &&
+	    tcpConns[i].destIP == newConn.srcIP){
+      return 0;
     }
   }
+  tcpConns[conns].srcPort = newConn.srcPort;
+  tcpConns[conns].destPort = newConn.destPort;
+  tcpConns[conns].srcIP = newConn.srcIP;
+  tcpConns[conns].destIP = newConn.destIP;
+  conns++;
 }
 
 //find the right tcpGroup group, before you can insert node

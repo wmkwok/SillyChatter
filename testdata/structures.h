@@ -1,3 +1,5 @@
+#define MAX_CONN_SIZE 1024
+
 struct pcapHdr{
   uint32_t magicNumber;
   uint16_t versionMajor;
@@ -67,3 +69,19 @@ struct tcpGroup{
   struct tcpSeg * head;
 };
 
+int numPkt = 0; //number of packets traced
+int numIP = 0; //number of IP packets
+int numTCP = 0; //number of TCP packets
+int numUDP = 0; //number of UDP packets
+int conns = 0; //number of unique TCP connections
+struct pcapHdr gblHdr;
+struct pktHdr recHdr;
+struct ethHdr eHdr;
+struct pkt buf;
+struct pkt p;
+struct tcpHdr tHdr;
+struct tcpHdr tcpp;
+struct tcpConn tcpConns[MAX_CONN_SIZE];
+struct tcpConn newConn;
+uint8_t ihlLen;
+uint32_t word;
