@@ -35,10 +35,11 @@ struct pkt{
 };
 
 struct tcpHdr{
-  uint32_t srcPrt:16, destPrt:16;
+  uint16_t srcPrt;
+  uint16_t destPrt:16;;
   uint32_t seq;
   uint32_t ack;
-  uint16_t offset:4, reserved:3, flags:9;
+  uint16_t offset:4, reserved:4, flags:8;
   uint16_t winSize;
   uint16_t checksum;
   uint16_t urgPtr;

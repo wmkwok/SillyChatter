@@ -2,9 +2,20 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <arpa/inet.h>
 #include "structures.h"
 
 #define MAX_CONN_SIZE 1024
+
+void ntoh(uint32_t * ptr, size_t byte);
+void extract_header(uint32_t * ptr, struct pkt * p);
+void t1(void);
+int load_tcp_hdr(uint32_t *buf, struct tcpHdr *hdr);
+void check_conn(struct tcpHdr * tcp, struct pkt * p, int conns, struct tcpConn tcpConns[]);
+void find_conn(struct tcpConn * conn);
+void insert_node(uint32_t seq, uint8_t * data, struct tcpGroup * grp);
+void read_tcp(struct tcpGroup * group);
+void t2(void);
 
 void ntoh(uint32_t * ptr, size_t byte){
   uint32_t word;
@@ -120,6 +131,7 @@ void t1(){
 
 	if(p.protocol == 6){ //TCP packet
 	  read(&tHdr, 1, sizeof(struct tcpHdr), stdin); //read to tcp header
+	  load_tcp_hdr((uint32_t *)&tcpp, &tHdr);
 	  /**************************print TCP header**************************************************/
 	  printf("packet no.: %i \ntimestamp: %i:%i \nincLen: %i \norigLen: %i \n", numPkt, recHdr.sec, recHdr.usec, recHdr.inclLen, recHdr.origLen);
 	  
@@ -132,7 +144,6 @@ void t1(){
 	  printf("TCP checksum: %x\n", ntohs(tHdr.checksum));
 	  printf("TCP urgPtr: %x\n", ntohs(tHdr.urgPtr));
 	  /*******************************************************************************************/
-	  load_tcp_hdr((uint32_t *)&tHdr, &tcpp);
 	}
 	else if(p.protocol == 17){ //UDP packet. SEEK past it?
 	  //maybe ignore and seek past it all together afterwards...
@@ -154,21 +165,11 @@ void t1(){
 
 /**********************************untested tcp functions******************************/
 
-int load_tcp_hdr(uint32_t *buf, struct tcpHdr *hdr) {
-
-  if (buf != NULL) {
-    memcpy(hdr, buf, sizeof(struct tcpHdr));
-  }
-
+int load_tcp_hdr(uint32_t * buf, struct tcpHdr *hdr) {
   hdr->srcPrt = ntohs(hdr->srcPrt);
   hdr->destPrt = ntohs(hdr->destPrt);
   hdr->seq = ntohl(hdr->seq);
   hdr->ack = ntohl(hdr->ack);
-  /* data_offset (4 bits) is unchanged
-   * reserved (3 bits) is unchanged
-   * flags (9 bits) TODO
-   */
-  
   hdr->winSize = ntohs(hdr->winSize);
   hdr->checksum = ntohs(hdr->checksum);
   hdr->urgPtr = ntohs(hdr->urgPtr);
@@ -196,7 +197,11 @@ void check_conn(struct tcpHdr * tcp, struct pkt * p, int conns, struct tcpConn t
 
     else{
       printf("add new connection in array");
-      //conns++;
+      tcpConns[conns].srcPort = tcp->srcPrt;
+      tcpConns[conns].destPort = tcp->destPrt;
+      tcpConns[conns].srcIP = p->sourceAddr;
+      tcpConns[conns].destIP = p->destAddr;
+      conns++;
     }
   }
 }
@@ -207,7 +212,7 @@ void find_conn(struct tcpConn * conn){
   
 }
 
-//haven't tested inser
+//haven't tested insert
 void insert_node(uint32_t seq, uint8_t * data, struct tcpGroup * grp){
   struct tcpSeg * node = (struct tcpSeg *)malloc(sizeof(struct tcpSeg));
   node->seq = seq;
