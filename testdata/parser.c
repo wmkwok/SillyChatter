@@ -152,6 +152,8 @@ void t1(){
   printf("Total Packets: %i \nTotal IP Packets: %i\nTotal TCP: %i\nTotal UDP: %i\n", numPkt, numIP, numTCP, numUDP);
 }
 
+/**********************************untested tcp functions******************************/
+
 int load_tcp_hdr(uint32_t *buf, struct tcpHdr *hdr) {
 
   if (buf != NULL) {
@@ -174,8 +176,39 @@ int load_tcp_hdr(uint32_t *buf, struct tcpHdr *hdr) {
   return 0;
 }
 
-//haven't tested insert
-void insert(uint32_t seq, uint8_t * data, struct tcpGroup * grp){
+//check/add connections when you find them
+void check_conn(struct tcpHdr * tcp, struct pkt * p, int conns, struct tcpConn tcpConns[]){
+  int i;
+  for(i=0; i < conns; i++){
+    if(tcpConns[i].srcPort == tcp->srcPrt && 
+       tcpConns[i].destPort == tcp->destPrt &&
+       tcpConns[i].srcIP == p->sourceAddr &&
+       tcpConns[i].destIP == p->destAddr){
+      printf("found conn");
+    }
+
+    else if(tcpConns[i].srcPort == tcp->destPrt && 
+       tcpConns[i].destPort == tcp->srcPrt &&
+       tcpConns[i].srcIP == p->destAddr &&
+       tcpConns[i].destIP == p->sourceAddr){
+      printf("found conn");
+    }
+
+    else{
+      printf("add new connection in array");
+      //conns++;
+    }
+  }
+}
+
+//find the right tcpGroup group, before you can insert node
+//the connections are in tcpConns array, declared globally above
+void find_conn(struct tcpConn * conn){
+  
+}
+
+//haven't tested inser
+void insert_node(uint32_t seq, uint8_t * data, struct tcpGroup * grp){
   struct tcpSeg * node = (struct tcpSeg *)malloc(sizeof(struct tcpSeg));
   node->seq = seq;
   node->data = data;
@@ -188,9 +221,19 @@ void insert(uint32_t seq, uint8_t * data, struct tcpGroup * grp){
       node->next = ptr;       //set the node to the second node
       ptr->prev = node;       //set the second node to the tmp node
     }
+    ptr = ptr->next; //move the ptr to the next node
   }
-
 }
+
+void read_tcp(struct tcpGroup * group){
+  struct tcpSeg * ptr = group->head; //set up a temp pointer
+  while(ptr != NULL){
+    printf("%s", ptr->data);
+    ptr = ptr->next;
+  }
+}
+
+/*******************************************************************************************/
 
 void t2(){
   printf("T2\n");
