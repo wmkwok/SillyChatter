@@ -112,42 +112,42 @@ void t1(){
       //UDP
       if(p.protocol == 17)
     	numUDP++;
-      }
+
+      if(p.version == 4){
+	//check for options and seek past it
+	int opt = (p.ihl-5)*4;
+	fseek(stdin, opt, SEEK_CUR);
+
+	if(p.protocol == 6){ //TCP packet
+	  read(&tHdr, 1, sizeof(struct tcpHdr), stdin); //read to tcp header
+	  /**************************print TCP header**************************************************/
+	  printf("packet no.: %i \ntimestamp: %i:%i \nincLen: %i \norigLen: %i \n", numPkt, recHdr.sec, recHdr.usec, recHdr.inclLen, recHdr.origLen);
+	  
+	  printf("TCP src port: %x\n", ntohs(tHdr.srcPrt));
+	  printf("TCP dest port: %x\n", ntohs(tHdr.destPrt));
+	  printf("TCP seq num: %x\n", ntohs(tHdr.seq));
+	  printf("TCP ack num: %x\n", ntohs(tHdr.ack));
+	  printf("TCP offset: %x, reserved: %x, flags: %x\n", tHdr.offset, tHdr.reserved, tHdr.flags);
+	  printf("TCP winSize: %x\n", ntohs(tHdr.winSize));
+	  printf("TCP checksum: %x\n", ntohs(tHdr.checksum));
+	  printf("TCP urgPtr: %x\n", ntohs(tHdr.urgPtr));
+	  /*******************************************************************************************/
+	  load_tcp_hdr((uint32_t *)&tHdr, &tcpp);
+	}
+	else if(p.protocol == 17){ //UDP packet. SEEK past it?
+	  //maybe ignore and seek past it all together afterwards...
+	}
+	//seek through the rest of the packet for now?
+	fseek(stdin, (long)recHdr.inclLen - 14 - sizeof(struct pkt) - opt -  (p.version == 6? sizeof(struct tcpHdr): 0), SEEK_CUR);       
+      } 
+    }
     
-    if(p.version != 4){
+    else{
       //printf("Unrecognized pkt version number %d at %d,%d: \n", p.version, recHdr.sec, recHdr.usec);
       //seek through the rest of the packet for now?
       fseek(stdin, (long)recHdr.inclLen - 14 - sizeof(struct pkt), SEEK_CUR); 
     }
-
-    else if(p.version == 4){
-      //check for options and seek past it
-      int opt = (p.ihl-5)*4;
-      fseek(stdin, opt, SEEK_CUR);
-
-      if(p.protocol == 6){ //TCP packet
-	read(&tHdr, 1, sizeof(struct tcpHdr), stdin); //read to tcp header
-	/**************************print TCP header**************************************************/
-	printf("packet no.: %i \ntimestamp: %i:%i \nincLen: %i \norigLen: %i \n", numPkt, recHdr.sec, recHdr.usec, recHdr.inclLen, recHdr.origLen);
-
-	printf("TCP src port: %x\n", ntohs(tHdr.srcPrt));
-	printf("TCP dest port: %x\n", ntohs(tHdr.destPrt));
-	printf("TCP seq num: %x\n", ntohs(tHdr.seq));
-	printf("TCP ack num: %x\n", ntohs(tHdr.ack));
-	printf("TCP offset: %x, reserved: %x, flags: %x\n", tHdr.offset, tHdr.reserved, tHdr.flags);
-	printf("TCP winSize: %x\n", ntohs(tHdr.winSize));
-	printf("TCP checksum: %x\n", ntohs(tHdr.checksum));
-	printf("TCP urgPtr: %x\n", ntohs(tHdr.urgPtr));
-	/*******************************************************************************************/
-	load_tcp_hdr((uint32_t *)&tHdr, &tcpp);
-      }
-      else if(p.protocol == 17){ //UDP packet. SEEK past it?
-	//maybe ignore and seek past it all together afterwards...
-      }
-      //seek through the rest of the packet for now?
-      fseek(stdin, (long)recHdr.inclLen - 14 - sizeof(struct pkt) - opt -  (p.version == 6? sizeof(struct tcpHdr): 0), SEEK_CUR);       
-    }
-      }
+  }
   printf("size of p %i \n", sizeof(p));
   printf("Total Packets: %i \nTotal IP Packets: %i\nTotal TCP: %i\nTotal UDP: %i\n", numPkt, numIP, numTCP, numUDP);
 }
