@@ -130,7 +130,7 @@ void t1(){
 	fseek(stdin, opt, SEEK_CUR);
 
 	if(p.protocol == 6){ //TCP packet
-	  read(&tHdr, 1, sizeof(struct tcpHdr), stdin); //read to tcp header
+	  fread(&tHdr, 1, sizeof(struct tcpHdr), stdin); //read to tcp header
 	  /**************************print TCP header**************************************************/
 	  printf("packet no.: %i \ntimestamp: %i:%i \nincLen: %i \norigLen: %i \n", numPkt, recHdr.sec, recHdr.usec, recHdr.inclLen, recHdr.origLen);
 	  
@@ -149,7 +149,7 @@ void t1(){
 	  //maybe ignore and seek past it all together afterwards...
 	}
 	//seek through the rest of the packet for now?
-	fseek(stdin, (long)recHdr.inclLen - 14 - sizeof(struct pkt) - opt -  (p.version == 6? sizeof(struct tcpHdr): 0), SEEK_CUR);       
+	fseek(stdin, (long)recHdr.inclLen - 14 - sizeof(struct pkt) - opt -  (p.protocol == 6? sizeof(struct tcpHdr): 0), SEEK_CUR);       
       } 
     }
     
