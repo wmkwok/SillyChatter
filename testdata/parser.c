@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include "structures.h"
 
 #define MAX_CONN_SIZE 1024
@@ -126,7 +127,6 @@ void t1(){
 
       if(p.protocol == 6){ //TCP packet
 	read(&tHdr, 1, sizeof(struct tcpHdr), stdin); //read to tcp header
-	load_tcp_hdr((uint32_t *)&tHdr, &tcpp);
 	/**************************print TCP header**************************************************/
 	printf("packet no.: %i \ntimestamp: %i:%i \nincLen: %i \norigLen: %i \n", numPkt, recHdr.sec, recHdr.usec, recHdr.inclLen, recHdr.origLen);
 
@@ -139,7 +139,7 @@ void t1(){
 	printf("TCP checksum: %x\n", ntohs(tHdr.checksum));
 	printf("TCP urgPtr: %x\n", ntohs(tHdr.urgPtr));
 	/*******************************************************************************************/
-	
+	load_tcp_hdr((uint32_t *)&tHdr, &tcpp);
       }
       else if(p.protocol == 17){ //UDP packet. SEEK past it?
 	//maybe ignore and seek past it all together afterwards...
@@ -172,6 +172,24 @@ int load_tcp_hdr(uint32_t *buf, struct tcpHdr *hdr) {
   hdr->urgPtr = ntohs(hdr->urgPtr);
 
   return 0;
+}
+
+//haven't tested insert
+void insert(uint32_t seq, uint8_t * data, struct tcpGroup * grp){
+  struct tcpSeg * node = (struct tcpSeg *)malloc(sizeof(struct tcpSeg));
+  node->seq = seq;
+  node->data = data;
+
+  struct tcpSeg * ptr = grp->head;
+  while(ptr != NULL){
+    if(seq > ptr->seq){
+      ptr->prev->next = node; //set the first one to the node
+      node->prev = ptr->prev; //set the node to the first one
+      node->next = ptr;       //set the node to the second node
+      ptr->prev = node;       //set the second node to the tmp node
+    }
+  }
+
 }
 
 void t2(){
