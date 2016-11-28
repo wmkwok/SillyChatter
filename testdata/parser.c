@@ -12,7 +12,7 @@ void t1(void);
 int load_tcp_hdr(uint32_t *buf, struct tcpHdr *hdr);
 int insert_conn(struct tcpConn newConn);
 void find_conn(struct tcpConn * conn);
-void insert_node(uint32_t seq, uint8_t * data, struct tcpGroup * grp);
+int insert_node(struct tcpSeg newSeg, struct tcpConn newConn);
 void read_tcp(struct tcpGroup * group);
 void t2(void);
 
@@ -132,16 +132,16 @@ void t1(){
 	if(p.protocol == 6){ //TCP packet
 	  fread(&tHdr, 1, sizeof(struct tcpHdr), stdin); //read to tcp header
 	  /**************************print TCP header**************************************************/
-	  printf("packet no.: %i \ntimestamp: %i:%i \nincLen: %i \norigLen: %i \n", numPkt, recHdr.sec, recHdr.usec, recHdr.inclLen, recHdr.origLen);
+	  /* printf("packet no.: %i \ntimestamp: %i:%i \nincLen: %i \norigLen: %i \n", numPkt, recHdr.sec, recHdr.usec, recHdr.inclLen, recHdr.origLen); */
 	  
-	  printf("TCP src port: %x\n", ntohs(tHdr.srcPrt));
-	  printf("TCP dest port: %x\n", ntohs(tHdr.destPrt));
-	  printf("TCP seq num: %x\n", ntohl(tHdr.seq));
-	  printf("TCP ack num: %x\n", ntohl(tHdr.ack));
-	  printf("TCP offset: %x, reserved: %x, flags: %x\n", tHdr.offset, tHdr.reserved, tHdr.flags);
-	  printf("TCP winSize: %x\n", ntohs(tHdr.winSize));
-	  printf("TCP checksum: %x\n", ntohs(tHdr.checksum));
-	  printf("TCP urgPtr: %x\n", ntohs(tHdr.urgPtr));
+	  /* printf("TCP src port: %x\n", ntohs(tHdr.srcPrt)); */
+	  /* printf("TCP dest port: %x\n", ntohs(tHdr.destPrt)); */
+	  /* printf("TCP seq num: %x\n", ntohl(tHdr.seq)); */
+	  /* printf("TCP ack num: %x\n", ntohl(tHdr.ack)); */
+	  /* printf("TCP offset: %x, reserved: %x, flags: %x\n", tHdr.offset, tHdr.reserved, tHdr.flags); */
+	  /* printf("TCP winSize: %x\n", ntohs(tHdr.winSize)); */
+	  /* printf("TCP checksum: %x\n", ntohs(tHdr.checksum)); */
+	  /* printf("TCP urgPtr: %x\n", ntohs(tHdr.urgPtr)); */
 	  /*******************************************************************************************/
 	  load_tcp_hdr((uint32_t *)&tcpp, &tHdr);
 	  
@@ -153,11 +153,24 @@ void t1(){
 	  };
 	  insert_conn(newConn);
 	}
-	else if(p.protocol == 17){ //UDP packet. SEEK past it?
-	  //maybe ignore and seek past it all together afterwards...
-	}
+
+	dataLen = (long)recHdr.inclLen - 14 - sizeof(struct pkt) - opt -  (p.protocol == 6? sizeof(struct tcpHdr): 0);
+	/* if(dataLen > 0){ */
+	/*   uint8_t * data = malloc(dataLen); */
+	/*   fread(data, 1, dataLen, stdin); */
+	/*   newSeg = (struct tcpSeg){ */
+	/*     .seq = tHdr.seq, */
+	/*     .data = data, */
+	/*     .prev = NULL, */
+	/*     .next = NULL */
+	/*   }; */
+	/*   printf("inserting node\n"); */
+	/*   insert_node(newSeg, newConn); */
+	/*   //printf("PARSED DATA \n\n %s \n\n", data); */
+	/* } */
+
 	//seek through the rest of the packet for now?
-	fseek(stdin, (long)recHdr.inclLen - 14 - sizeof(struct pkt) - opt -  (p.protocol == 6? sizeof(struct tcpHdr): 0), SEEK_CUR);       
+	fseek(stdin, dataLen, SEEK_CUR);       
       } 
     }
     
@@ -218,22 +231,55 @@ void find_conn(struct tcpConn * conn){
 }
 
 //haven't tested insert
-void insert_node(uint32_t seq, uint8_t * data, struct tcpGroup * grp){
+int insert_node(struct tcpSeg newSeg, struct tcpConn newConn){
   struct tcpSeg * node = (struct tcpSeg *)malloc(sizeof(struct tcpSeg));
-  node->seq = seq;
-  node->data = data;
+  node->seq = newSeg.seq;
+  node->data = newSeg.data;
+  int i;
 
-  struct tcpSeg * ptr = grp->head;
-  while(ptr != NULL){
-    if(seq > ptr->seq){
-      ptr->prev->next = node; //set the first one to the node
-      node->prev = ptr->prev; //set the node to the first one
-      node->next = ptr;       //set the node to the second node
-      ptr->prev = node;       //set the second node to the tmp node
+  for(i=0; i < conns; i++){
+    if((tcpConns[i].srcPort == newConn.srcPort &&
+       tcpConns[i].destPort == newConn.destPort &&
+       tcpConns[i].srcIP == newConn.srcIP &&
+        tcpConns[i].destIP == newConn.destIP) ||
+       (tcpConns[i].srcPort == newConn.destPort &&
+            tcpConns[i].destPort == newConn.srcPort &&
+            tcpConns[i].srcIP == newConn.destIP &&
+	tcpConns[i].destIP == newConn.srcIP)){
+
+      //find the right seq place and insert the node
+      struct tcpSeg * ptr = tcpConns[i].head;
+      if(tcpConns[i].head == NULL){
+        tcpConns[i].head = node;
+      }
+      else{
+        while(ptr != NULL){
+          if(node->seq > ptr->seq){
+            ptr->prev->next = node; //set the first one to the node
+            node->prev = ptr->prev; //set the node to the first one
+            node->next = ptr;       //set the node to the second node
+            ptr->prev = node;       //set the second node to the tmp node
+            break;
+          }
+          ptr = ptr->next; //move the ptr to the next node
+        }
+        return 0;
+      }
     }
-    ptr = ptr->next; //move the ptr to the next node
+
+    /* else if(tcpConns[i].srcPort == newConn.destPort &&  */
+    /*      tcpConns[i].destPort == newConn.srcPort && */
+    /*      tcpConns[i].srcIP == newConn.destIP && */
+    /*      tcpConns[i].destIP == newConn.srcIP){ */
+
+    /*   //find the right seq place and insert the node */
+    /*   struct tcpSeg * ptr = tcpConns[i].head; */
+    /*   return 0; */
+    /* } */
   }
+  return 0;
 }
+
 
 void read_tcp(struct tcpGroup * group){
   struct tcpSeg * ptr = group->head; //set up a temp pointer
