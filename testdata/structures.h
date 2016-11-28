@@ -53,6 +53,7 @@ struct tcpConn{
   uint32_t destIP;
   uint32_t srcPort;
   uint32_t destPort;
+  struct tcpSeg * head;
 };
 
 //a node of a part of one connection
@@ -74,6 +75,7 @@ int numIP = 0; //number of IP packets
 int numTCP = 0; //number of TCP packets
 int numUDP = 0; //number of UDP packets
 int conns = 0; //number of unique TCP connections
+int dataLen = 0;
 struct pcapHdr gblHdr;
 struct pktHdr recHdr;
 struct ethHdr eHdr;
@@ -83,5 +85,6 @@ struct tcpHdr tHdr;
 struct tcpHdr tcpp;
 struct tcpConn tcpConns[MAX_CONN_SIZE];
 struct tcpConn newConn;
+struct tcpSeg newSeg;
 uint8_t ihlLen;
 uint32_t word;
