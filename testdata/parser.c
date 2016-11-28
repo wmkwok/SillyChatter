@@ -72,7 +72,7 @@ void t1(){
   /* uint32_t word; */
 
   /**************************************global headers*****************************************/
-  printf("Read status: %i\n", fread(&gblHdr, 1, sizeof(gblHdr),  stdin));
+  printf("Read status: %zu\n", fread(&gblHdr, 1, sizeof(gblHdr),  stdin));
   /* printf("feof return status: %i \n", feof(stdin)); */
   /* printf("Global Header: \n"); */
   /* printf("Magic Number: %x \n", gblHdr.magicNumber); */
@@ -167,7 +167,7 @@ void t1(){
       fseek(stdin, (long)recHdr.inclLen - 14 - sizeof(struct pkt), SEEK_CUR); 
     }
   }
-  printf("size of p %i \n", sizeof(p));
+  printf("size of p %zu \n", sizeof(p));
   printf("Total Packets: %i \nTotal IP Packets: %i\nTotal TCP: %i\nTotal UDP: %i\nTCP conns: %i\n", numPkt, numIP, numTCP, numUDP, conns);
 }
 
@@ -208,6 +208,7 @@ int insert_conn(struct tcpConn newConn){
   tcpConns[conns].srcIP = newConn.srcIP;
   tcpConns[conns].destIP = newConn.destIP;
   conns++;
+  return 0;
 }
 
 //find the right tcpGroup group, before you can insert node
